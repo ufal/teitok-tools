@@ -15,9 +15,9 @@ GetOptions ( ## Command line options
             'force' => \$force, # write even if project exists
             'corpus=s' => \$corpus, # corpus to be converted
             'regfolder=s' => \$regfolder, # registry folder
-            'corpfolder=s' => \$corpfolder, # registry folder
-            'textnode=s' => \$textnode, # registry folder
-            'makeproject' => \$makeproject, # registry folder
+            'corpfolder=s' => \$corpfolder, # the name of the folder where to create the TEITOK project
+            'textnode=s' => \$textnode, # Node to use in the input to split XML files (default: <doc>)
+            'makeproject' => \$makeproject, # whether to make a full TEITOK project
             );
 
 $\ = "\n"; $, = "\t";
