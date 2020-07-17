@@ -2,7 +2,7 @@
 
 Conversion tools to and from the TEITOK TEI/XML format. More scripts will be added over time.
 
-Current script:
+Current scripts:
 
 * `	udpipe2teitok.pl` - create TEITOK/XML files parsed with UDPIPE out of raw text files
 * `manatee2teitok.pl` - create a TEITOK project out of an existing KonText corpus 
@@ -14,7 +14,8 @@ Takes a folder with raw text files, and runs them one by one through UDPIPE to g
 stored in a folder `udpipe`, and the resulting TEITOK/XML files in a folder `xmlfiles`. The names of the the parse and output
 files mimick the names and file structure of the original files. The output files contain a `<s>` for
 each sentence and a `<tok>` for each token, where the tokens contains the parse attributes 
-lemma, upos, xpos, feats, head, deprel, and deps as attributes.
+lemma, upos, xpos, feats, head, deprel, and deps as attributes. 
+Heads refer to the unique `@id` rather than to the ordinal number in the sentence like they do in UD.
 
 Example usage:
 `
@@ -47,7 +48,9 @@ Command line options:
 
 Takes any tokenized XML file and runs the list of tokens through UDPIPE. If the XML file is not segmented into 
 sentences, it will assume the start of a new sentence after each !,?,. The resulting parse data
-lemma, upos, xpos, feats, head, deprel, and deps are added to the token nodes as attributes.
+lemma, upos, xpos, feats, head, deprel, and deps are added to the token nodes as attributes. In case sentences
+and tokens do not have an `@id` attribute they will be assigned a sequential identifier, which is used in the parsing
+process - and heads refer to the unique `@id` rather than to the ordinal number in the sentence like they do in UD.
 
 Example usage:
 
