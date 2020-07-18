@@ -88,7 +88,7 @@ perl parseudpipe.pl --file=test.xml --atts=reg,full --sent=s --tok=tok --lang=En
 `
 
 Command line options:
-* writeback - write back to original file or put in new file
+* writeback - write back to original file or put (otherwise output is written to a folder parsed)
 * file - which UDPIPE model to use
 * model - which UDPIPE model to use
 * lang - language of the texts (if no model is provided)

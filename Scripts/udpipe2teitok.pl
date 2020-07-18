@@ -13,6 +13,7 @@ $scriptname = $0;
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
+            'mixed' => \$mixed, # mixed language corpus - detect for each text
             'model=s' => \$model, # which UDPIPE model to use
             'lang=s' => \$lang, # language of the texts (if no model is provided)
             'orgfolder=s' => \$orgfolder, # Originals folder
@@ -29,8 +30,9 @@ if ( !-d $orgfolder ) { print "No original files folder $orgfolder"; exit; };
 open FILE, $tmp; %udm = ();
 while ( <FILE> ) {
 	chop;
-	( $code, $lg, $mod ) = split ( "\t" );
+	( $code, $code3, $lg, $mod ) = split ( "\t" );
 	$code2model{$code} = $mod;
+	$code2model{$code3} = $mod;
 	$lang2model{$lg} = $mod;
 	$mod2lang{$mod} = ucfirst($lg);
 	$mod2code{$mod} = $code;
@@ -41,6 +43,8 @@ if ( !$model ) {
 		$model = $code2model{$lang} or $model = $lang2model{lc($lang)};
 		if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
 		print "Choosing $model for $lang";
+	} else {
+		$nomodel = 1; $model = "(detect from text)";		
 	};
 } elsif ( !$models{$model} ) { print "No such UDPIPE model: $model"; exit;  };
 
@@ -63,6 +67,13 @@ sub treatfile ( $fn ) {
 		$raw = <FILE>;
 		close FILE;
 
+		if ( $nomodel ) {
+			$iso = detectlang($raw);
+			if ( !$iso ) { print " - Language detection failed"; next; }
+			if ( !$model ) { print " - No model found for $iso / $name"; next; }
+			if ( !$mixed ) { $nomodel = 0; };
+		};
+		
 		( $udfile = $fn ) =~ s/$orgfolder/udpipe/;
 		$udfile =~ s/\..*?$/\.conllu/;
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
@@ -102,6 +113,23 @@ $teitext
 		
 
 	};
+};
+
+sub detectlang ( $text ) {
+	$text = @_[0];
+	%form = (
+		"data" => $text
+	);
+	
+	$url = 'http://quest.ms.mff.cuni.cz/teitok-dev/teitok/corpuswiki/index.php?action=cwali';
+	$res = $ua->post( $url, \%form );
+	$jsdat = $res->decoded_content;
+	$jsonkont = decode_json($jsdat);
+	$iso = $jsonkont->{'best'}; $name = $jsonkont->{'name'};
+	$model = $code2model{$iso} or $model = $lang2model{$name}; 
+	print " - Language detected: $iso / $name, using $model";
+	
+	return $iso;
 };
 
 sub runudpipe ( $raw, $model ) {
