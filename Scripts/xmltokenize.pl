@@ -61,6 +61,7 @@ $filetype = $doc->firstChild->getName;
 if ( $mtxtelm eq '' ) { 
 	if ( $filetype eq 'TEI' ) {
 		$mtxtelm = 'text'; 
+		if ( $exclude eq '' ) { $exclude = "note|desc|gap|pb|fw|app"; };
 	} elsif ( $filetype eq 'HTML' || $filetype eq 'html' ) { 
 		$mtxtelm = 'body'; 
 	} else {
@@ -118,7 +119,7 @@ $tagtxt = decode_entities($tagtxt);
 # Take them out and put them back later
 # TODO: this goes wrong with nested notes (which apt. are allowed in TEI)
 $notecnt = 0;
-while ( $tagtxt =~ /<(note|desc|gap|pb|fw|app)[^>]*(?<!\/)>.*?<\/\1>/gsmi )  {
+while ( $tagtxt =~ /<($exclude)[^>]*(?<!\/)>.*?<\/\1>/gsmi )  {
 	$notetxt = $&; $leftc = $`;
 	$notes[$notecnt] = $notetxt; $newtxt = substr($leftc, -50).'#'.$notetxt;
 	if ( $oldtxt eq $newtxt ) { 

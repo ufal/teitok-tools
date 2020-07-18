@@ -1,6 +1,9 @@
 # teitok-tools
 
-Conversion tools to and from the TEITOK TEI/XML format. More scripts will be added over time.
+Conversion tools to, from, and related to the tokenized TEI/XML format. 
+These scripts can be used independently from the [TEITOK](http://www.teitok.org) platform, even though they
+were build primarily with TEITOK in mind. 
+More scripts will be added over time.
 
 Current scripts:
 
@@ -64,7 +67,7 @@ perl xmltokenize.pl --file=test.xml --enumerate --tok=w
 
 Command line options:
 * filename=s - filename of the file to tokenize
-* textnode=s - what to use as the text to tokenize
+* textnode=s - what to use as the text body to tokenize
 * tok=s - what to use as a token node
 * exlude=s - elements not to tokenize
 * enumerate - provide a unique ID to each token
