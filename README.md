@@ -6,6 +6,7 @@ Current scripts:
 
 * `	udpipe2teitok.pl` - create TEITOK/XML files parsed with UDPIPE out of raw text files
 * `manatee2teitok.pl` - create a TEITOK project out of an existing KonText corpus 
+* `xmltokenize.pl` - tokenize an XML file
 * `parseudpipe.pl` - parse a tokenized XML file and parse it with UDPIPE
 
 ## udpipe2teitok
@@ -43,6 +44,29 @@ Command line options:
 * regfolder - registry folder (if not /opt/kontext/data/registry)
 * corpfolder - the name of the folder where to create the TEITOK project 
 * textnode - Node to use in the input to split XML files (default: <doc>)
+
+## xmltokenize
+
+Takes any XML file and tokenizes it. Tokenization is done by adding a token node around each token (by default `<tok>`),
+where a token is any text surrounded by spaces, with punctuation marks (any character in the Unicode PUNCT block) at the
+beginning and the end of the words split off as a separate token. If the tokenization breaks existing tags, those tags will
+be split - so `some<i>thing strange<i>` will be tokenized into  `<tok>some<i>thing</i></tok><i> <tok>strange</tok><i>`. 
+In rare cases, this process leads to invalid XML and the incorrect XML will not be written back to the file, but rather to
+/tmp/wrong.xml.
+
+Example usage:
+
+`
+perl xmltokenize.pl --file=test.xml --enumerate --tok=w
+`
+
+Command line options:
+* filename=s - filename of the file to tokenize
+* textnode=s - what to use as the text to tokenize
+* tok=s - what to use as a token node
+* exlude=s - elements not to tokenize
+* enumerate - provide a unique ID to each token
+* segment=i - split into sentences (1=yes, 2=only) - only for TEI files
 
 ## parseudpipe
 
