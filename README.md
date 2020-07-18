@@ -47,12 +47,14 @@ Command line options:
 
 ## xmltokenize
 
-Takes any XML file and tokenizes it. Tokenization is done by adding a token node around each token (by default `<tok>`),
+Takes any XML file and tokenizes its text body (`<text>` for TEI, `<body>` for HTML, other filetypes have to be
+specified). Tokenization is done by adding a token node around each token (by default `<tok>`),
 where a token is any text surrounded by spaces, with punctuation marks (any character in the Unicode PUNCT block) at the
 beginning and the end of the words split off as a separate token. If the tokenization breaks existing tags, those tags will
 be split - so `some<i>thing strange<i>` will be tokenized into  `<tok>some<i>thing</i></tok><i> <tok>strange</tok><i>`. 
 In rare cases, this process leads to invalid XML and the incorrect XML will not be written back to the file, but rather to
-/tmp/wrong.xml.
+/tmp/wrong.xml. TEI files can furthermore be optionally segmented into sentences, where a new sentence is supposed 
+after any token !, ?, or .
 
 Example usage:
 
