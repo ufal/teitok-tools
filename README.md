@@ -30,6 +30,7 @@ Command line options:
 * model - the UDPIPE model to be used (which has to be available in the REST API)
 * lang - an indication of the language (either an ISO code or a name) in case no model is provided
 * orgfolder - the folder where the raw text files are located.
+* mixed - mixed language corpus - use CWALI to detect the language of each file.
 
 ## manatee2teitok
 
