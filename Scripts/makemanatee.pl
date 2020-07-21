@@ -39,12 +39,17 @@ if ( !$baseurl && $sharedsettings ) {
 };
 if ( !$baseurl ) { print "Failed to establish base URL"; exit; };
 
+if ( -e "$thispath/manatee/subcorp.def" ) { 
+	$subcdef = "SUBCDEF \"$thispath/manatee/subcorp.def\"
+SUBCBASE \"$thispath/manatee/subcorp\""; 
+}; 
+
 # Build the registry file
 $reg = "NAME \"$corpusname\"
 PATH  \"$thispath/manatee/corp\"
 ENCODING utf-8
 VERTICAL \"$thispath/manatee/corpus.vrt\"
-SUBCDEF \"$thispath/manatee/subcorp.def\"
+$subcdef
 
 ATTRIBUTE word
 ATTRIBUTE lc {
@@ -100,6 +105,13 @@ if ( !-d "manatee/corp" ) { mkdir("manatee/corp"); };
 &runcmd("/usr/local/bin/cwb-decode -Cx -r cqp $cqpcorpus $attslist | /usr/bin/perl $pwd/cleanvrt.pl $baseurl > manatee/corpus.vrt");
 # Import the VRT into Manatee
 &runcmd("/usr/bin/compilecorp --recompile-corpus --no-ske $mancorpus manatee/corpus.vrt");
+
+# Since compilecorp does not seem to properly write the subcorpora, run mksubc here again
+if ( -e "$thispath/manatee/subcorp.def" ) {
+	`mkdir -p manatee/subcorp`;
+	&runcmd("/usr/bin/mksubc $mancorpus manatee/subcorp manatee/subcorp.def");
+};
+
 # Restart Kontext
 &runcmd("sudo systemctl restart kontext");
 
