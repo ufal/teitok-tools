@@ -86,10 +86,11 @@ sub treatfile ( $fn ) {
 		print FILE $conllu;
 		close FILE;
 		
-		if ( substr($outfolder,0,1) == "/" ) 
+		if ( substr($outfolder,0,1) == "/" ) {
 			( $xmlfile = $udfile ) =~ s/.*udpipe/$outfolder/;
-		else 
+		} else { 
 			( $xmlfile = $udfile ) =~ s/udpipe/$outfolder/;
+		};
 		$xmlfile =~ s/\.conllu$/\.xml/;
 		( $tmp = $xmlfile ) =~ s/\/[^\/]+$//;
 		`mkdir -p $tmp`;
