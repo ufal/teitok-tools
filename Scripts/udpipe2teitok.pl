@@ -89,7 +89,7 @@ sub treatfile ( $fn ) {
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
 		`mkdir -p $tmp`;
 		$conllu = runudpipe($raw, $model);
-		print " - Writing to $udfile";
+		print " - Writing tmp to $udfile";
 		open FILE, ">$udfile";
 		binmode (FILE, ":utf8");
 		print FILE $conllu;
