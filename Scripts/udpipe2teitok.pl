@@ -18,6 +18,7 @@ GetOptions ( ## Command line options
             'lang=s' => \$lang, # language of the texts (if no model is provided)
             'orgfolder=s' => \$orgfolder, # Originals folder
             'outfolder=s' => \$outfolder, # Folders where parsed files will be placed
+            'tmpfolder=s' => \$tmpfolder, # Folders where conllu files will be placed
             );
 
 $\ = "\n"; $, = "\t";
@@ -26,6 +27,10 @@ $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 
 if ( !$orgfolder ) { $orgfolder = "Originals"; };
 if ( !-d $orgfolder ) { print "No original files folder $orgfolder"; exit; };
+
+if ( !$outfolder ) { $outfolder = "xmlfiles"; };
+if ( !$tmpfolder ) { $tmpfolder = "udpipe"; };
+
 
 ( $tmp = $0 ) =~ s/Scripts.*/Resources\/udpipe-models.txt/;
 open FILE, $tmp; %udm = ();
@@ -51,7 +56,7 @@ if ( !$model ) {
 
 print "Using model: $model";
 
-mkdir("udpipe");
+mkdir($tmpfolder);
 find({ wanted => \&treatfile, follow => 1, no_chdir => 1 }, $orgfolder);
 
 STDOUT->autoflush();
@@ -75,7 +80,11 @@ sub treatfile ( $fn ) {
 			if ( !$mixed ) { $nomodel = 0; };
 		};
 		
-		( $udfile = $fn ) =~ s/$orgfolder/udpipe/;
+		if ( substr($outfolder,0,1) == "/" ) {
+			( $udfile = $fn ) =~ s/.*$orgfolder/$tmpfolder/;
+		} else { 
+			( $udfile = $fn ) =~ s/$orgfolder/$tmpfolder/;
+		};
 		$udfile =~ s/\..*?$/\.conllu/;
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
 		`mkdir -p $tmp`;
@@ -87,9 +96,9 @@ sub treatfile ( $fn ) {
 		close FILE;
 		
 		if ( substr($outfolder,0,1) == "/" ) {
-			( $xmlfile = $udfile ) =~ s/.*udpipe/$outfolder/;
+			( $xmlfile = $udfile ) =~ s/.*$orgfolder/$outfolder/;
 		} else { 
-			( $xmlfile = $udfile ) =~ s/udpipe/$outfolder/;
+			( $xmlfile = $fn ) =~ s/$orgfolder/$outfolder/;
 		};
 		$xmlfile =~ s/\.conllu$/\.xml/;
 		( $tmp = $xmlfile ) =~ s/\/[^\/]+$//;
