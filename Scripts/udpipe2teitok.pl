@@ -126,7 +126,7 @@ sub detectlang ( $text ) {
 		"data" => $text
 	);
 	
-	$url = 'http://quest.ms.mff.cuni.cz/teitok-dev/teitok/corpuswiki/index.php?action=cwali';
+	$url = 'http://quest.ms.mff.cuni.cz/teitok-dev/teitok/cwali/index.php?action=cwali';
 	$res = $ua->post( $url, \%form );
 	$jsdat = $res->decoded_content;
 	$jsonkont = decode_json($jsdat);
