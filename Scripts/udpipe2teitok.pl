@@ -17,6 +17,7 @@ GetOptions ( ## Command line options
             'model=s' => \$model, # which UDPIPE model to use
             'lang=s' => \$lang, # language of the texts (if no model is provided)
             'orgfolder=s' => \$orgfolder, # Originals folder
+            'outfolder=s' => \$outfolder, # Folders where parsed files will be placed
             );
 
 $\ = "\n"; $, = "\t";
@@ -85,7 +86,10 @@ sub treatfile ( $fn ) {
 		print FILE $conllu;
 		close FILE;
 		
-		( $xmlfile = $udfile ) =~ s/udpipe/xmlfiles/;
+		if ( substr($outfolder,0,1) == "/" ) 
+			( $xmlfile = $udfile ) =~ s/.*udpipe/$outfolder/;
+		else 
+			( $xmlfile = $udfile ) =~ s/udpipe/$outfolder/;
 		$xmlfile =~ s/\.conllu$/\.xml/;
 		( $tmp = $xmlfile ) =~ s/\/[^\/]+$//;
 		`mkdir -p $tmp`;
