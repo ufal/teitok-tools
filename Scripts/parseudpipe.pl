@@ -113,13 +113,15 @@ sub treatfile ( $fn ) {
 				$num++;
 			};
 		};
+	
+		if ( $debug ) { print $toklist; };
 				
 		if ( !$folder ) { $udfile = "udpipe/$udfile"; };
 		$udfile =~ s/\..*?$/\.conllu/;
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
 		`mkdir -p $tmp`;
 		$conllu = runudpipe($toklist, $model);
-		print " - Writing to $udfile";
+		print " - Writing JSON to $udfile";
 		open FILE, ">$udfile";
 		binmode (FILE, ":utf8");
 		print FILE $conllu;
