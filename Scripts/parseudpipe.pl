@@ -36,8 +36,9 @@ if ( !$token ) { $token = "tok"; };
 open FILE, $tmp; %udm = ();
 while ( <FILE> ) {
 	chop;
-	( $code, $iso, $lg, $mod ) = split ( "\t" );
+	( $iso, $code, $lg, $mod ) = split ( "\t" );
 	$code2model{$code} = $mod;
+	$code2model{$iso} = $mod;
 	$lang2model{$lg} = $mod;
 	$mod2lang{$mod} = ucfirst($lg);
 	$mod2code{$mod} = $code;
