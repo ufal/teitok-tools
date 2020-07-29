@@ -117,6 +117,7 @@ sub treatfile ( $fn ) {
 	
 		if ( $debug ) { print $toklist; };
 				
+		$udfile = $fn;
 		if ( !$folder ) { $udfile = "udpipe/$udfile"; };
 		$udfile =~ s/\..*?$/\.conllu/;
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
