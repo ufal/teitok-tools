@@ -36,7 +36,7 @@ if ( !$token ) { $token = "tok"; };
 open FILE, $tmp; %udm = ();
 while ( <FILE> ) {
 	chop;
-	( $code, $lg, $mod ) = split ( "\t" );
+	( $code, $iso, $lg, $mod ) = split ( "\t" );
 	$code2model{$code} = $mod;
 	$lang2model{$lg} = $mod;
 	$mod2lang{$mod} = ucfirst($lg);
@@ -169,7 +169,7 @@ sub runudpipe ( $raw, $model ) {
 	);
 	
 	$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
-		print " - Running UDPIPE from $url/$model";
+		print " - Running UDPIPE from $url / $model";
 	$res = $ua->post( $url, \%form );
 	$jsdat = $res->decoded_content;
 	$jsonkont = decode_json($jsdat);
