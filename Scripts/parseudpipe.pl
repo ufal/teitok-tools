@@ -114,7 +114,6 @@ sub treatfile ( $fn ) {
 			};
 		};
 				
-		( $udfile = $fn ) =~ s/$folder/udpipe/;
 		if ( !$folder ) { $udfile = "udpipe/$udfile"; };
 		$udfile =~ s/\..*?$/\.conllu/;
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
