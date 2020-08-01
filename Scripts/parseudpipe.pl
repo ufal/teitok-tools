@@ -6,6 +6,7 @@ use LWP::Simple;
 use LWP::UserAgent;
 use JSON;
 use XML::LibXML;
+use Encode;
 
 # Parse a tokenized corpus using UDPIPE
 
@@ -114,8 +115,12 @@ sub treatfile ( $fn ) {
 				$num++;
 			};
 		};
+		utf8::upgrade($toklist);
 	
-		if ( $debug ) { print $toklist; };
+		if ( $debug ) { 
+			binmode(STDOUT, ":utf8");
+			print $toklist; 
+		};
 				
 		$udfile = $fn;
 		if ( $folder eq '' ) { $udfile = "udpipe/$udfile"; };
@@ -156,31 +161,26 @@ sub parsetok ($tok) {
 		if ( $form ) { last; }
 	};
 	if ( !$form ) { $form = $tok->textContent; };
+	if ( !$form ) { $form = "_"; };	
 	return "$num\t$form\t_\t_\t_\t_\t_\t_\t_\t$tokid\n"; $num++;
 };
 
 sub runudpipe ( $raw, $model ) {
 	($raw, $model) = @_;
 
-	if ( $debug ) { 
-		open FILE, ">/tmp/udpipe-raw.txt";
-		print FILE $raw;
-		close FILE;
-	};
-
 	%form = (
 		"input" => "conllu",
 		"tagger" => "1",
 		"parser" => "1",
 		"model" => $model,
-		"data" => $raw
+		"data" => $raw,
 	);
 	
 	$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
 		print " - Running UDPIPE from $url / $model";
 	$res = $ua->post( $url, \%form );
 	$jsdat = $res->decoded_content;
-	$jsonkont = decode_json($jsdat);
+	$jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
 
 
 	return $jsonkont->{'result'};
