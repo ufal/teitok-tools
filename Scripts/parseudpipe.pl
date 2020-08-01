@@ -162,6 +162,12 @@ sub parsetok ($tok) {
 sub runudpipe ( $raw, $model ) {
 	($raw, $model) = @_;
 
+	if ( $debug ) { 
+		open FILE, ">/tmp/udpipe-raw.txt";
+		print FILE $raw;
+		close FILE;
+	};
+
 	%form = (
 		"input" => "conllu",
 		"tagger" => "1",
