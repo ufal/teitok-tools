@@ -2,6 +2,8 @@
 # convert a hOCR (pe from tesseract) to TEI
 # (c) Maarten Janssen, 2016
 
+use utf8;
+
 $filename = shift;
 
 $/ = undef;
@@ -55,8 +57,8 @@ while ( $text =~ /<p class='ocr_par'[^>]*>/ ) {
 };
 
 # Split off punctuation marks
-$text =~ s/([.,]|\&quot;)<\/tok>/<\/tok><tok>\1<\/tok>/g;
-$text =~ s/(<tok[^>]*>)([´]|\&quot;)/<tok>\2<\/tok>\1/g;
+$text =~ s/(\p{isPunct})<\/tok>/<\/tok><tok>\1<\/tok>/g;
+$text =~ s/(<tok[^>]*>)(\p{isPunct})/<tok>\2<\/tok>\1/g;
 
 # Clean non-needed stuff
 $text =~ s/<div class='ocr_carea'[^>]*>//g;
