@@ -137,7 +137,7 @@ sub treatfile ( $fn ) {
 		parseconllu($udfile);		
 		
 		# Add the revision statement
-		$revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"xmltokenize\"]");
+		$revnode = makenode($xml, "/TEI/teiHeader/revisionDesc/change[\@who=\"xmltokenize\"]");
 		$when = strftime "%Y-%m-%d", localtime;
 		$revnode->setAttribute("when", $when);
 		$revnode->appendText("parsed with UDPIPE using $model");
