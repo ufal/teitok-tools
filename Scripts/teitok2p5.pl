@@ -188,5 +188,13 @@ foreach $time ( @timeline ) {
 	
 }; 
 
-
-print $doc->toString(2);
+if ( $writeback ) { 
+	$outfile = $filename;
+	`mv $orgfile $orgfile.teitok`;
+} else {
+	( $outfile = $filename ) =~ s/\.([^.]+)$/\.p5\.\1/;
+};
+print "Writing converted file to $outfile\n";
+open OUTFILE, ">$outfile";
+print OUTFILE $doc->toString;	
+close OUTFLE;
