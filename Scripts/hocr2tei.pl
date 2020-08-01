@@ -19,7 +19,6 @@ binmode(STDOUT, ":utf8");
 if ( !$filename ) { $filename = shift; };
 
 $today = strftime "%Y-%m-%d", localtime;
-if ( $morerev ) { $morerev = "<change who=\"hocr2tei\" when=\"$today\">$morerev</change>"; };
 
 $/ = undef;
 open FILE, $filename;
