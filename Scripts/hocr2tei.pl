@@ -2,9 +2,24 @@
 # convert a hOCR (pe from tesseract) to TEI
 # (c) Maarten Janssen, 2016
 
+use XML::LibXML;
+use Getopt::Long;
 use utf8;
+use POSIX qw(strftime);
 
-$filename = shift;
+$\ = "\n"; $, = "\t";
+binmode(STDOUT, ":utf8");
+
+ GetOptions ( ## Command line options
+            'debug' => \$debug, # debugging mode
+            'file=s' => \$filename, # debugging mode
+            'morerev=s' => \$morerev, # debugging mode
+            );
+
+if ( !$filename ) { $filename = shift; };
+
+$today = strftime "%Y-%m-%d", localtime;
+if ( $morerev ) { $morerev = "<change who=\"hocr2tei\" when=\"$today\">$morerev</change>"; };
 
 $/ = undef;
 open FILE, $filename;
@@ -67,6 +82,7 @@ $text =~ s/<\/span>//g;
 
 $tei = "<TEI>
 <teiHeader>
+<revisionDesc>$morerev<change who=\"hocr2tei\" when=\"$today\">Converted from hOCR</change></revisionDesc></teiHeader>
 </teiHeader>
 <text>
 $text

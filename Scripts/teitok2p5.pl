@@ -31,7 +31,7 @@ foreach $tk ( $doc->findnodes("//text") ) {
 	$tk->removeAttribute('xml:space');
 };
 
-@tokatts = ('xml:id', 'lemma', 'msd', 'ana');
+@tokatts = ('xml:id', 'lemma', 'msd', 'pos');
 
 # Convert <dtok> to <tok> (to be dealt with later)
 foreach $tk ( $doc->findnodes("//text//tok[dtok]") ) {
@@ -52,6 +52,53 @@ foreach $tk ( $doc->findnodes("//text//tok[dtok]") ) {
 	};
 };
 
+# Deal with the namespace
+$doc->firstChild->setAttribute('xmlns', 'http://www.tei-c.org/ns/1.0');
+
+# Convert bbox  to <surface> elements
+$pcnt = 1; 
+foreach $bboxelm ( $doc->findnodes("//text//*[\@bbox]") ) {
+	$bbox = $bboxelm->getAttribute('bbox');
+	if ( $bboxelm->getName() eq 'pb' ) {
+		$page = $bboxelm;
+	} else {
+		$page = $bboxelm->findnodes("./preceding::pb")->item(0);
+	};
+	$pbid = $page->getAttribute('id');
+	$spag = $spags{$pbid};
+	if ( !$spag ) {
+		$spag = $doc->createElement( 'surface' );
+		if ( $page->getAttribute('n') ) {
+			$spag->setAttribute('n', $page->getAttribute('n'));
+		};
+		$graph = $doc->createElement( 'graphic' );
+		$graph->setAttribute('url', $page->getAttribute('facs'));
+		$spag->addChild($graph);
+		$facs = $doc->findnodes(".//facsimile")->item(0);
+		if ( !$facs ) { 
+			$facs = $doc->createElement( 'facsimile' );
+			$doc->firstChild->addChild($facs);
+		};
+		$facs->addChild($spag);
+		$spid = 'PF'.$pcnt++; $zcnt{$spid} = 1;
+		$spag->setAttribute('xml:id', $spid);
+		$spags{$pbid} = $spag;
+	} else { $spid = $spag->getAttribute('xml:id'); };
+	( $x1, $y1, $x2, $y2 ) = split ( " ", $bboxelm->getAttribute('bbox') );
+	$zone = $doc->createElement( 'zone' );
+	$zone->setAttribute('ulx', $x1);
+	$zone->setAttribute('uly', $x2);
+	$zone->setAttribute('lrx', $y1);
+	$zone->setAttribute('lry', $y2);
+	$zid = $spid.'-Z'.$zcnt{$spid}++;
+	$zone->setAttribute('xml:id', $zid);
+	$spag->addChild($zone);
+	$bboxelm->setAttribute('corresp', '#'.$zid);
+	
+	# Remove the bbox
+	$bboxelm->removeAttribute('bbox');
+};
+
 # Convert <tok> to <w> and <pc>
 $tcnt = 0;
 foreach $tk ( $doc->findnodes("//text//tok") ) {
@@ -63,11 +110,6 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 		if ( $word =~ /^\p{isPunct}+$/ ) { $wpc = "pc"; };
 	};
 	$tk->setName($wpc);
-
-	if ( $tk->getAttribute('pos') ) {
-		$tk->setAttribute('ana', '#'.$tk->getAttribute('pos') );
-		$tk->removeAttribute('pos');
-	};
 	
 	if ( $tk->getAttribute('upos') ) {
 		# Convert CoNNL-U to msd
@@ -111,47 +153,6 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 		
 };
 
-# Convert bbox  to <surface> elements
-$pcnt = 1; 
-foreach $bboxelm ( $doc->findnodes("//text//*[\@bbox]") ) {
-	$bbox = $bboxelm->getAttribute('bbox');
-	if ( $bboxelm->getName() eq 'pb' ) {
-		$page = $bboxelm;
-	} else {
-		$page = $bboxelm->findnodes("./preceding::pb")->item(0);
-	};
-	$pbid = $page->getAttribute('id');
-	$spag = $spags{$pbid};
-	if ( !$spag ) {
-		$spag = $doc->createElement( 'surface' );
-		if ( $page->getAttribute('n') ) {
-			$spag->setAttribute('n', $page->getAttribute('n'));
-		};
-		$graph = $doc->createElement( 'graphic' );
-		$graph->setAttribute('url', $page->getAttribute('facs'));
-		$spag->addChild($graph);
-		$facs = $doc->findnodes(".//facsimile")->item(0);
-		if ( !$facs ) { 
-			$facs = $doc->createElement( 'facsimile' );
-			$doc->firstChild->addChild($facs);
-		};
-		$facs->addChild($spag);
-		$spid = 'PF'.$pcnt++; $zcnt{$spid} = 1;
-		$spag->setAttribute('xml:id', $spid);
-		$spags{$pbid} = $spag;
-	} else { $spid = $spag->getAttribute('xml:id'); };
-	( $x1, $y1, $x2, $y2 ) = split ( " ", $bboxelm->getAttribute('bbox') );
-	$zone = $doc->createElement( 'zone' );
-	$zone->setAttribute('ulx', $x1);
-	$zone->setAttribute('uly', $x2);
-	$zone->setAttribute('lrx', $y1);
-	$zone->setAttribute('lry', $y2);
-	$zid = $spid.'-Z'.$zcnt{$spid}++;
-	$zone->setAttribute('xml:id', $zid);
-	$spag->addChild($zone);
-	$bboxelm->setAttribute('corresp', '#'.$zid);
-	$bboxelm->removeAttribute('bbox');
-};
 
 # Convert sound start/end to <timeline> elements
 foreach $utt ( $doc->findnodes("//text//u") ) {
