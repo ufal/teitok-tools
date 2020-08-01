@@ -136,6 +136,12 @@ sub treatfile ( $fn ) {
 		
 		parseconllu($udfile);		
 		
+		# Add the revision statement
+		$revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"xmltokenize\"]");
+		$when = strftime "%Y-%m-%d", localtime;
+		$revnode->setAttribute("when", $when);
+		$revnode->appendText("parsed with UDPIPE using $model");
+		
 		if ( $writeback ) { 
 			$outfile = $orgfile;
 		} else {
@@ -274,3 +280,41 @@ sub textprotect ( $text ) {
 
 	return $text;
 };
+
+sub makenode ( $xml, $xquery ) {
+	my ( $xml, $xquery ) = @_;
+	@tmp = $xml->findnodes($xquery); 
+	if ( scalar @tmp ) { 
+		$node = shift(@tmp);
+		if ( $debug ) { print "Node exists: $xquery"; };
+		return $node;
+	} else {
+		if ( $xquery =~ /^(.*)\/(.*?)$/ ) {
+			my $parxp = $1; my $thisname = $2;
+			my $parnode = makenode($xml, $parxp);
+			$thisatts = "";
+			if ( $thisname =~ /^(.*)\[(.*?)\]$/ ) {
+				$thisname = $1; $thisatts = $2;
+			};
+			$newchild = XML::LibXML::Element->new( $thisname );
+			
+			# Set any attributes defined for this node
+			if ( $thisatts ne '' ) {
+				if ( $debug ) { print "setting attributes $thisatts"; };
+				foreach $ap ( split ( " and ", $thisatts ) ) {
+					if ( $ap =~ /\@([^ ]+) *= *"(.*?)"/ ) {
+						$an = $1; $av = $2; 
+						$newchild->setAttribute($an, $av);
+					};
+				};
+			};
+
+			if ( $debug ) { print "Creating node: $xquery ($thisname)"; };
+			$parnode->addChild($newchild);
+			
+		} else {
+			print "Failed to find or create node: $xquery";
+		};
+	};
+};
+
