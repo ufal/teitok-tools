@@ -81,7 +81,7 @@ $text =~ s/<\/span>//g;
 
 $tei = "<TEI>
 <teiHeader>
-<revisionDesc>$morerev<change who=\"hocr2tei\" when=\"$today\">Converted from hOCR</change></revisionDesc></teiHeader>
+<revisionDesc>$morerev<change who=\"hocr2tei\" when=\"$today\">Converted from hOCR</change></revisionDesc>
 </teiHeader>
 <text>
 $text

@@ -83,7 +83,7 @@ sub treatfile ( $fn ) {
 		};
 		if ( !$xml ) { 
 			print "Invalid XML in $fn";
-			next;
+			continue;
 		};
 		if ( !$tokxp ) { $tokxp = "//$token"; };
 		$num = 1; 
