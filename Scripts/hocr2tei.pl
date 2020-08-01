@@ -6,6 +6,7 @@ $filename = shift;
 
 $/ = undef;
 open FILE, $filename;
+binmode(FILE, ":utf8");
 $text = <FILE>;
 close FILE;
 
@@ -70,4 +71,5 @@ $text
 </text>
 </TEI>";
 
+binmode(STDOUT, ":utf8");
 print $tei;
