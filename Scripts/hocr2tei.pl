@@ -12,8 +12,9 @@ binmode(STDOUT, ":utf8");
 
  GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
-            'file=s' => \$filename, # debugging mode
-            'morerev=s' => \$morerev, # debugging mode
+            'file=s' => \$filename, # filename
+            'morerev=s' => \$morerev, # add additional revisionStmt
+            'strippath' => \$strippath, # strip path from facs name
             );
 
 if ( !$filename ) { $filename = shift; };
@@ -78,6 +79,10 @@ $text =~ s/(<tok[^>]*>)(\p{isPunct})/<tok>\2<\/tok>\1/g;
 $text =~ s/<div class='ocr_carea'[^>]*>//g;
 $text =~ s/<\/div>//g;
 $text =~ s/<\/span>//g;
+
+if ( $strippath ) {
+	$text =~ s/ facs="[^"]+\/(.*)"/facs="\1"/g;
+};
 
 $tei = "<TEI>
 <teiHeader>
