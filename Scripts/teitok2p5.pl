@@ -140,8 +140,41 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 		
 	};
 
-	$tk->setAttribute('xml:id', $tk->getAttribute('id'));
-	$tk->removeAttribute('id');
+	# Rename id to xml:id
+	if ( $tk->getAttribute('id') ) {
+		$tk->setAttribute('xml:id', $tk->getAttribute('id'));
+		$tk->removeAttribute('id');
+	};
+	
+	if ( $tk->getAttribute('nform') || $tk->getAttribute('reg') ) {
+		$choice = $doc->createElement( 'choice' );
+		$tk->parentNode->insertAfter($choice, $tk);
+		$orig = $doc->createElement( 'orig' );
+		$choice->addChild($orig);
+		$orig->addChild($tk);
+		$reg = $doc->createElement( 'reg' );
+		$choice->addChild($reg);
+		$regw = $doc->createElement( $wpc );
+		$reg->addChild($regw);
+		$nform = $tk->getAttribute('nform') or $nform = $tk->getAttribute('reg') ;
+		$txt = $doc->createTextNode( $nform );
+		$regw->addChild($txt);
+	};
+	
+	if ( $tk->getAttribute('fform') || $tk->getAttribute('expan') ) {
+		$choice = $doc->createElement( 'choice' );
+		$tk->parentNode->insertAfter($choice, $tk);
+		$orig = $doc->createElement( 'abbr' );
+		$choice->addChild($orig);
+		$orig->addChild($tk);
+		$reg = $doc->createElement( 'expan' );
+		$choice->addChild($reg);
+		$regw = $doc->createElement( $wpc );
+		$reg->addChild($regw);
+		$fform = $tk->getAttribute('fform') or $fform = $tk->getAttribute('expan') ;
+		$txt = $doc->createTextNode( $fform );
+		$regw->addChild($txt);
+	};
 
 	# Remove all attributes that are not P5
 	foreach $att ( $tk->attributes() ) {
