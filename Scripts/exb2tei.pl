@@ -6,6 +6,7 @@ use Getopt::Long;
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
             'file=s' => \$filename, # language of input
+            'morerev=s' => \$morerev, # language of input
             'outfolder=s' => \$outfolder, # language of input
             );
 
@@ -170,8 +171,6 @@ while ( $xml =~ /<speaker .*?<\/speaker>/gsmi ) {
 	";
 }; 
 
-( $relfilename = $filename ) =~ s/.*\/cocl\///;
-
 $teiHeader = "
 <titleStmt>
 	<title>".$meta{'title'}."</title>
@@ -210,6 +209,8 @@ $teiHeader = "
 	<note n=\"topic\">".$meta{'topic'}."</note>
 	<note n=\"CRPC id\">".$meta{'crpc'}."</note>
 </notesStmt>
+<revisionDesc>
+	$morerev<change who=\"exb2tei\" when=\"$today\">Converted from EXMARaLDA</change></revisionDesc>
 
 "; 
 $teiHeader =~ s/>Unknown</></;
