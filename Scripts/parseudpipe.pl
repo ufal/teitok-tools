@@ -24,6 +24,7 @@ GetOptions ( ## Command line options
             'sent=s' => \$sent, # sentence node
             'sentxp=s' => \$sentxp, # sentence XPath
             'atts=s' => \$atts, # attributes to use for the word form
+            'forms=s' => \$atts, # attribute for the normalized form
             );
 
 $\ = "\n"; $, = "\t";
@@ -32,6 +33,7 @@ $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 $parser = XML::LibXML->new(); 
 
 if ( !$token ) { $token = "tok"; };
+if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
 
 ( $tmp = $0 ) =~ s/Scripts.*/Resources\/udpipe-models.txt/;
 open FILE, $tmp; %udm = ();
