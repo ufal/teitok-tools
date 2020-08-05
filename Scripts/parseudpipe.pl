@@ -57,7 +57,7 @@ if ( !$model ) {
 
 print "Using model: $model";
 
-mkdir("udpipe");
+if ( !$writeback) { mkdir("udpipe"); };
 @formatts = split( ",", $atts );
 
 if ( $file ) {
