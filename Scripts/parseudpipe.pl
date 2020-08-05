@@ -117,7 +117,7 @@ sub treatfile ( $fn ) {
 				$num++;
 			};
 		};
-		# utf8::upgrade($toklist);
+		utf8::upgrade($toklist);
 	
 		if ( $debug ) { 
 			binmode(STDOUT, ":utf8");
@@ -188,7 +188,8 @@ sub runudpipe ( $raw, $model ) {
 		print " - Running UDPIPE from $url / $model";
 	$res = $ua->post( $url, \%form );
 	$jsdat = $res->decoded_content;
-	$jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
+	# $jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
+	$jsonkont = decode_json($res->decoded_content);
 
 
 	return $jsonkont->{'result'};
