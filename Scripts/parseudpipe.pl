@@ -117,7 +117,7 @@ sub treatfile ( $fn ) {
 				$num++;
 			};
 		};
-		utf8::upgrade($toklist);
+		# utf8::upgrade($toklist);
 	
 		if ( $debug ) { 
 			binmode(STDOUT, ":utf8");

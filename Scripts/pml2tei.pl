@@ -47,7 +47,7 @@ if ( $raw =~ /<doc([^>]+)>/ ) { $docmeta = $1; };
 	$raw =~ s/(<tok pdtid="[^"]+w1")/\n  <\/s>\n  <s>\n   \1/gsmi;
 	$raw =~ s/xx\n\s*\n\s*<\/s>//gsmi;
 	
-	( $rfname = $filename ) =~ s/Originals\///;
+	( $rfname = $filename ) =~ s/.*\///;
 	$tei = "<TEI>
 <teiHeader>
 	<notesStmt>
