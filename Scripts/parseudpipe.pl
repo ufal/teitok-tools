@@ -35,6 +35,8 @@ $parser = XML::LibXML->new();
 if ( !$token ) { $token = "tok"; };
 if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
 
+if ( !$file ) { $file = shift; };
+
 ( $tmp = $0 ) =~ s/Scripts.*/Resources\/udpipe-models.txt/;
 open FILE, $tmp; %udm = ();
 while ( <FILE> ) {
@@ -97,7 +99,10 @@ sub treatfile ( $fn ) {
 				if ( !$sentid ) { $sentid = "s-".$sntcnt++; $snt->setAttribute('id', $sentid); };
 				$toklist .= "# sent_id $sentid\n";
 				foreach $tok ( $snt->findnodes(".//$token") ) {
-					$toklist .= parsetok($tok);
+					$tokxml = parsetok($tok);
+					$toklist .= $tokxml;
+					@tmp = split("\t", $tokxml); 
+					$rawtxt .= $tmp[1]." ";
 					$num++;
 				};
 				$toklist .= "\n"; $num = 1;
@@ -108,8 +113,11 @@ sub treatfile ( $fn ) {
 			foreach $tok ( $xml->findnodes($tokxp) ) {
 				if ( $newsent ) { $toklist .= "# sent_id s-".$snum++."\n"; };
 				$newsent = 0;
-				$tokxml = parsetok($tok); $toklist .= $tokxml;
-				@tmp = split("\t", $tokxml); if ( $tmp[1] =~ /^[.!?]$/ ) { 
+				$tokxml = parsetok($tok); 
+				$toklist .= $tokxml;
+				@tmp = split("\t", $tokxml); 
+				$rawtxt .= $tmp[1]." ";
+				if ( $tmp[1] =~ /^[.!?]$/ ) { 
 					$toklist .= "\n"; 
 					$newsent = 1;
 					$num = 0;
@@ -118,6 +126,13 @@ sub treatfile ( $fn ) {
 			};
 		};
 		utf8::upgrade($toklist);
+	
+		if ( !$model ) {
+			$lang = detectlang($rawtxt);
+			$model = $code2model{$lang};
+			print "Detected language : $lang => $model";
+			if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
+		};
 	
 		if ( $debug ) { 
 			binmode(STDOUT, ":utf8");
@@ -166,6 +181,23 @@ sub parsetok ($tok) {
 	if ( !$form ) { $form = $tok->textContent; };
 	if ( !$form ) { $form = "_"; };	
 	return "$num\t$form\t_\t_\t_\t_\t_\t_\t_\t$tokid\n"; $num++;
+};
+
+sub detectlang ( $text ) {
+	$text = @_[0];
+	%form = (
+		"data" => $text
+	);
+	
+	$url = 'http://quest.ms.mff.cuni.cz/teitok-dev/teitok/cwali/index.php?action=cwali';
+	$res = $ua->post( $url, \%form );
+	$jsdat = $res->decoded_content;
+	$jsonkont = decode_json($jsdat);
+	$iso = $jsonkont->{'best'}; $name = $jsonkont->{'name'};
+	$model = $code2model{$iso} or $model = $lang2model{$name}; 
+	print " - Language detected: $iso / $name, using $model";
+	
+	return $iso;
 };
 
 sub runudpipe ( $raw, $model, $udfile ) {
