@@ -177,7 +177,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		if ( -e "$modelroot/$model" ) {
 			$modelfile = "$modelroot/$model";
 		} else {
-			$modelfile = `locate $model`;
+			$modelfile = `locate $model`; chop($modelfile);
 		};
 
 		($tmpfile = $udfile) =~ s/\./-vrt./;
