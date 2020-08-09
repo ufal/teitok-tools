@@ -182,8 +182,9 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		
 		$cmd = "/usr/local/bin/udpipe --tag --parse --input=conllu --outfile='$udfile' $modelfile $raw";
 		print " - Parsing with UDPIPE / $model to $udfile";
+		print $cmd;
 		`$cmd`;
-				
+						
 	} else {
 
 		%form = (
