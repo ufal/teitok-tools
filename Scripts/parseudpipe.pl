@@ -129,12 +129,7 @@ sub treatfile ( $fn ) {
 		$udfile =~ s/\..*?$/\.conllu/;
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
 		`mkdir -p $tmp`;
-		$conllu = runudpipe($toklist, $model);
-		print " - Writing JSON to $udfile";
-		open FILE, ">$udfile";
-		binmode (FILE, ":utf8");
-		print FILE $conllu;
-		close FILE;
+		$conllu = runudpipe($toklist, $model, $udfile);
 		
 		parseconllu($udfile);		
 		
@@ -173,26 +168,39 @@ sub parsetok ($tok) {
 	return "$num\t$form\t_\t_\t_\t_\t_\t_\t_\t$tokid\n"; $num++;
 };
 
-sub runudpipe ( $raw, $model ) {
+sub runudpipe ( $raw, $model, $udfile ) {
 	($raw, $model) = @_;
 
-	%form = (
-		"input" => "conllu",
-		"tagger" => "1",
-		"parser" => "1",
-		"model" => $model,
-		"data" => $raw,
-	);
+	if ( -e "/usr/local/bin/udpipe" ) {
+		
+		$cmd = "/usr/local/bin/udpipe --tag --parse --input=conllu --outfile='$udfile' $model $raw";
+		print " - Parsing with UDPIPE / $model to $udfile";
+		`$cmd`;
+				
+	} else {
+
+		%form = (
+			"input" => "conllu",
+			"tagger" => "1",
+			"parser" => "1",
+			"model" => $model,
+			"data" => $raw,
+		);
 	
-	$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
-		print " - Running UDPIPE from $url / $model";
-	$res = $ua->post( $url, \%form );
-	$jsdat = $res->decoded_content;
-	# $jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
-	$jsonkont = decode_json($res->decoded_content);
+		$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
+			print " - Running UDPIPE from $url / $model";
+		$res = $ua->post( $url, \%form );
+		$jsdat = $res->decoded_content;
+		# $jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
+		$jsonkont = decode_json($res->decoded_content);
 
-
-	return $jsonkont->{'result'};
+		print " - Writing CoNLL-U to $udfile";
+		open FILE, ">$udfile";
+		binmode (FILE, ":utf8");
+		print FILE $jsonkont->{'result'};
+		close FILE;
+	
+	};
 	
 };
 
