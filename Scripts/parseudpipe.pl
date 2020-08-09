@@ -180,12 +180,13 @@ sub runudpipe ( $raw, $model, $udfile ) {
 			$modelfile = `locate $model`;
 		};
 
-		($tmpfile = $udfile) =~ s/\./-input./;
+		($tmpfile = $udfile) =~ s/\./-vrt./;
 		open FILE, ">$tmpfile";
 		binmode (FILE, ":utf8");
 		print FILE $raw;
 		close FILE;
 		
+		print " - Writing VRT file to $tmpfile";
 		$cmd = "/usr/local/bin/udpipe --tag --parse --input=conllu --outfile='$udfile' $modelfile $tmpfile";
 		print " - Parsing with UDPIPE / $model to $udfile";
 		print $cmd;
