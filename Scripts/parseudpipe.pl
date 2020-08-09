@@ -173,7 +173,14 @@ sub runudpipe ( $raw, $model, $udfile ) {
 
 	if ( -e "/usr/local/bin/udpipe" ) {
 		
-		$cmd = "/usr/local/bin/udpipe --tag --parse --input=conllu --outfile='$udfile' $model $raw";
+		( $modelroot = $scriptname ) =~ s/\/[^\/]+$//;
+		if ( -e "$modelroot/$model" ) {
+			$modelfile = "$modelroot/$model";
+		} else {
+			$modelfile = `locate $model`;
+		};
+		
+		$cmd = "/usr/local/bin/udpipe --tag --parse --input=conllu --outfile='$udfile' $modelfile $raw";
 		print " - Parsing with UDPIPE / $model to $udfile";
 		`$cmd`;
 				
