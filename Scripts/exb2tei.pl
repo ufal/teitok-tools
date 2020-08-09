@@ -210,7 +210,7 @@ $teiHeader = "
 	<note n=\"CRPC id\">".$meta{'crpc'}."</note>
 </notesStmt>
 <revisionDesc>
-	$morerev<change who=\"exb2tei\" when=\"$today\">Converted from EXMARaLDA</change></revisionDesc>
+	$morerev<change who=\"exb2tei\" when=\"$today\">Converted from EXMARaLDA file $relfilename</change></revisionDesc>
 
 "; 
 $teiHeader =~ s/>Unknown</></;
