@@ -179,8 +179,14 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		} else {
 			$modelfile = `locate $model`;
 		};
+
+		($tmpfile = $udfile) =~ s/\./-input./;
+		open FILE, ">$tmpfile";
+		binmode (FILE, ":utf8");
+		print FILE $raw;
+		close FILE;
 		
-		$cmd = "/usr/local/bin/udpipe --tag --parse --input=conllu --outfile='$udfile' $modelfile $raw";
+		$cmd = "/usr/local/bin/udpipe --tag --parse --input=conllu --outfile='$udfile' $modelfile $tmpfile";
 		print " - Parsing with UDPIPE / $model to $udfile";
 		print $cmd;
 		`$cmd`;
