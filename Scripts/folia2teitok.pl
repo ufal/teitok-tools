@@ -1,0 +1,234 @@
+use Getopt::Long;
+use XML::LibXML;
+use Data::Dumper;
+use POSIX qw(strftime);
+
+# Convert PML files to TEITOK/XML
+ 
+ GetOptions ( ## Command line options
+            'debug' => \$debug, # debugging mode
+            'test' => \$test, # tokenize to string, do not change the database
+            'file=s' => \$filename, # input file
+            'output=s' => \$output, # output file
+            'morerev=s' => \$morerev, # language of input
+            );
+
+$\ = "\n"; $, = "\t";
+
+
+if ( !$filename ) { $filename = shift; };
+( $basename = $filename ) =~ s/.*\///; $basename =~ s/\..*//;
+if ( !$output ) { $output = $basename.".xml"; };
+	
+	$/ = undef;
+	open FILE, $filename;
+	$raw = <FILE>;
+	close FILE;
+	
+$raw =~ s/ xmlns=".*?"//g;
+$raw =~ s/ version=".*?"//g;
+$raw =~ s/ xmlns:xlink=".*?"//g;
+$raw =~ s/ xlink:.*?=".*?"//g;
+$raw =~ s/<\?.*?\?>//g;
+# $raw =~ s/xml://g;
+	
+	if ( $debug ) { print $raw; };
+
+
+# Check if this is valid XML to start with
+$parser = XML::LibXML->new(); $doc = "";
+eval {
+	$doc = $parser->load_xml(string => $raw, { no_blanks => 1 });
+};
+if ( !$doc ) { 
+	print "Invalid XML in $filename";
+	open FILE, ">wrong.xml";
+	print FILE $raw;
+	close FILE;
+	print `xmllint wrong.xml`;
+	exit;
+};
+
+$doc->findnodes("/FoLiA")->item(0)->setName('TEI');
+# Add the header
+$teiheader = $doc->createElement("teiHeader");
+$doc->firstChild->insertBefore($teiheader, $doc->firstChild->firstChild);
+
+if ( $debug ) { print "Dealing with metadata"; };
+$metas{'title'} = "/TEI/teiHeader/fileDesc/titleStmt/title";
+$metas{'language'} = "/TEI/teiHeader/profileDesc/langUsage/language/\@ident";
+$metas{'genre'} = "/TEI/teiHeader/profileDesc/textClass/keywords/term[\@type=\"genre\"]";
+$metas{'originalsource'} = "/TEI/teiHeader/notesStmt/note[\@n=\"orgfile\"]";
+while ( ( $key, $xp ) = each (%metas) ) {
+	$metanode = $doc->findnodes("//meta[\@id=\"$key\"]");
+	if ( $metanode ) { 
+		$metaval = $metanode->item(0)->textContent;
+		$headernode = makenode($doc, $xp);
+		if ( $headernode->nodeType() == 2 ) {
+			$headernode->parentNode->setAttribute($headernode->getName, $metaval);
+		} else {
+			$headernode->appendText($metaval);
+		};
+	};
+};
+
+if ( $debug ) { print "Dealing with text"; };
+foreach $text ( $doc->findnodes("//text") ) {
+	$lang = $text->findnodes("./lang")->item(0);
+	if ( $lang ) { 	
+		$langt = $lang->getAttribute('class');
+		$text->setAttribute('lang', $langt); 
+		$text->removeChild($lang);
+	};
+};
+
+if ( $debug ) { print "Dealing with sentences"; };
+foreach $sent ( $doc->findnodes("//s") ) {
+	$sentid = $sent->getAttribute('pdtid');
+	foreach $text ( $sent->findnodes("./t") ) { 
+		$textatt = $text->getAttribute('class') or $textatt = "text";	
+		$sent->setAttribute($textatt, $text->textContent); 
+		$sent->removeChild($text);
+	};
+};
+
+if ( $debug ) { print "Dealing with tokens"; };
+foreach $tok ( $doc->findnodes("//w") ) {
+	$tok->setName('tok'); $toktext = "";
+	foreach $attnode ( $tok->childNodes ) {
+		$attname = $attnode->getName();
+		if ( $attname eq '#text' ) { 
+			# Ignore text nodes below <w>
+			# print $attnode->toString;
+		} elsif ( $attname eq 't' ) { 
+			$toktext = $attnode->textContent;
+		} else {
+			$attval = $attnode->getAttribute('class') or $attval = $attnode->firstChild->textContent;
+			$attval =~ s/\s+//;
+			if ( $attval ne '' ) {
+				$tok->setAttribute($attname, $attval);
+			} else {
+				# print "No value: ".$attnode->toString;
+			};
+		};
+		$tok->removeChild($attnode);
+	};
+	$tok->appendText($toktext);
+	if ( $tok->getAttribute('space') ne 'no' ) { 
+		 $c = $doc->createElement("c");
+		 $c->appendText(' ');
+		 $tok->parentNode->insertAfter($c, $tok);
+		 $tok->removeAttribute('space');
+	};
+};
+
+if ( $debug ) { print "Dealing with dependencies"; };
+foreach $dep ( $doc->findnodes("//dependency") ) {
+	$deprel = $dep->getAttribute('class');
+	$tokid = $dep->findnodes(".//dep/wref")->item(0)->getAttribute('id');
+	$head = $dep->findnodes(".//hd/wref")->item(0)->getAttribute('id');
+	$tok = $doc->findnodes("//tok[\@xml:id=\"$tokid\"]")->item(0);
+	if ( $tok ) { 
+		$tok->setAttribute('head', $head);
+		$tok->setAttribute('deprel', $deprel);
+	} else {
+		print "Token not found: $tokid <= ".$dep->toString;
+	};
+};
+# Now, remove the dependencies
+$deps = $doc->findnodes("//dependencies")->item(0);
+if ( $deps ) { $deps->parentNode->removeChild($deps); };
+
+# Deal with Syntax (how??)
+foreach $remnode ( $doc->findnodes("//syntax") ) {
+	$remnode->parentNode->removeChild($remnode); 
+};
+
+# Deal with Morphology (how??)
+foreach $remnode ( $doc->findnodes("//morphology") ) {
+	$remnode->parentNode->removeChild($remnode); 
+};
+
+# Now, remove the nodes we cannot deal with
+@noknows = (
+	"entities", # MWE?
+	"phonology", # Phonolgy
+	"chunking", # Non-MWE chunks
+	"timing", # time-alignment, but not in a usable fashion
+	"semroles", # semantic role annotation
+	"statements", # ??
+	"metric", # element counts
+	"metadata", # metadata - all about the annotation
+	"foreign-data", # non-FoLiA data
+	"t", # any remaining text nodes
+);
+foreach $noknow ( @noknows ) { 
+	foreach $remnode ( $doc->findnodes("//$noknow") ) {
+		$remnode->parentNode->removeChild($remnode); 
+	};
+};
+
+# Add the revision statement
+$revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"xmltokenize\"]");
+$when = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $when);
+$revnode->appendText("Converted from FoLiA file $basename.xml");
+
+if ( $debug ) {
+	print $doc->toString; 
+	exit;
+};
+
+open FILE, ">$output";
+print "Writing output to $output";
+print FILE $doc->toString(1);
+close FILE;
+
+
+sub makenode ( $xml, $xquery ) {
+	my ( $xml, $xquery ) = @_;
+	@tmp = $xml->findnodes($xquery); 
+	if ( scalar @tmp ) { 
+		$node = shift(@tmp);
+		if ( $debug ) { print "Node exists: $xquery"; };
+		return $node;
+	} else {
+		if ( $xquery =~ /^(.*)\/(.*?)$/ ) {
+			my $parxp = $1; my $thisname = $2;
+			my $parnode = makenode($xml, $parxp);
+			$thisatts = "";
+			if ( $thisname =~ /^(.*)\[(.*?)\]$/ ) {
+				$thisname = $1; $thisatts = $2;
+			};
+			if ( $thisname =~ /^@(.*)/ ) {
+				$attname = $1;
+				$parnode->setAttribute($attname, '');
+				foreach $att ( $parnode->attributes() ) {
+					if ( $att->getName eq $attname ) {
+						return $att;
+					};
+				};
+			} else {
+				$newchild = XML::LibXML::Element->new( $thisname );
+			
+				# Set any attributes defined for this node
+				if ( $thisatts ne '' ) {
+					if ( $debug ) { print "setting attributes $thisatts"; };
+					foreach $ap ( split ( " and ", $thisatts ) ) {
+						if ( $ap =~ /\@([^ ]+) *= *"(.*?)"/ ) {
+							$an = $1; $av = $2; 
+							$newchild->setAttribute($an, $av);
+						};
+					};
+				};
+
+				if ( $debug ) { print "Creating node: $xquery ($thisname)"; };
+				$parnode->addChild($newchild);
+			};
+			
+		} else {
+			print "Failed to find or create node: $xquery";
+		};
+	};
+};
+
