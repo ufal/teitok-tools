@@ -94,6 +94,67 @@ foreach $sent ( $doc->findnodes("//s") ) {
 	};
 };
 
+if ( $debug ) { print "Dealing with corrections"; };
+foreach $corr ( $doc->findnodes("//correction[.//original]") ) {
+	$tmp = scalar(@{$corr->findnodes(".//original/w")});
+	if ( $tmp == 1 ) {
+		# A single original
+		$tomove = $corr->findnodes(".//original/w")->item(0);
+		$tomove->setName("tok");
+		$txt = $tomove->findnodes("./t")->item(0)->textContent;
+		$tomove->appendText($txt);
+		foreach $newtok ( $corr->findnodes(".//new/w") ) {
+			$tomove->addChild($newtok);
+			$newtok->setName("dtok");
+			$txt = $newtok->findnodes("./t")->item(0);
+			$newtok->setAttribute("nform", $txt->textContent);
+			$newtok->removeChild($txt)
+		};
+	} elsif ( $tmp == 0 ) {
+		# No original
+		$token = $corr->findnodes("ancestor::w")->item(0);
+		if ( $token ) {
+			$sep = ""; $reg = "";
+			foreach $wrd ( $corr->findnodes(".//new//t") ) {
+				$reg .= $sep.$wrd->textContent;
+				$sep = " ";
+			};
+			$token->setAttribute("nform", $reg);
+			foreach $wrd ( $corr->findnodes(".//original//t") ) {
+				$token->insertBefore($wrd, $token->firstChild);
+			};
+		} else {
+			# print "Non-word correction without a word: ".$corr->toString;
+		};
+	} else {
+		$sep = ""; $reg = "";
+		$tomove = $corr->findnodes(".//original")->item(0);
+		$tomove->setName("mtok");
+		foreach $newtok ( $corr->findnodes(".//new/w/t") ) {
+			$reg .= $sep.$newtok->textContent;
+			$corrid = $newtok->parentNode->getAttribute("xml:id");
+			$sep = " ";
+		};
+		$tomove->setAttribute('nform', $reg);
+		$tomove->setAttribute('xml:id', $corrid);
+	};	
+	if ( $tomove ) {
+		$corr->parentNode->insertBefore($tomove, $corr);
+		if ( $tmp == 1 && $tomove->getAttribute('space') ne 'no' ) { 
+			 $c = $doc->createElement("c");
+			 $c->appendText(' ');
+			 $tomove->parentNode->insertAfter($c, $tomove);
+			 $tomove->removeAttribute('space');
+		};
+	};
+};
+foreach $corr ( $doc->findnodes("//correction[.//current]") ) {
+	foreach $curr ( $corr->findnodes(".//current/w") ) {
+		$corr->parentNode->insertBefore($curr, $corr);
+	};
+};
+
+
 if ( $debug ) { print "Dealing with tokens"; };
 foreach $tok ( $doc->findnodes("//w") ) {
 	$tok->setName('tok'); $toktext = "";
@@ -162,6 +223,7 @@ foreach $remnode ( $doc->findnodes("//morphology") ) {
 	"metric", # element counts
 	"metadata", # metadata - all about the annotation
 	"foreign-data", # non-FoLiA data
+	"correction", # any remaining corrections
 	"t", # any remaining text nodes
 );
 foreach $noknow ( @noknows ) { 
