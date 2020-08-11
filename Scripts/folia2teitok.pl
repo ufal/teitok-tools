@@ -74,13 +74,14 @@ while ( ( $key, $xp ) = each (%metas) ) {
 };
 
 if ( $debug ) { print "Dealing with text"; };
-foreach $text ( $doc->findnodes("//text") ) {
-	$lang = $text->findnodes("./lang")->item(0);
+foreach $textnode ( $doc->findnodes("//text") ) {
+	$lang = $textnode->findnodes("./lang")->item(0);
 	if ( $lang ) { 	
 		$langt = $lang->getAttribute('class');
-		$text->setAttribute('lang', $langt); 
-		$text->removeChild($lang);
+		$textnode->setAttribute('lang', $langt); 
+		$textnode->removeChild($lang);
 	};
+	if ( $nospace ) { $textnode->setAttribute('xml:space', 'preserve'); };
 };
 
 if ( $debug ) { print "Dealing with sentences"; };
