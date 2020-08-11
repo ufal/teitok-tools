@@ -11,6 +11,7 @@ use POSIX qw(strftime);
             'file=s' => \$filename, # input file
             'output=s' => \$output, # output file
             'morerev=s' => \$morerev, # language of input
+            'nospace' => \$nospace, # convert to whitespace-sensitive XML
             );
 
 $\ = "\n"; $, = "\t";
@@ -179,9 +180,15 @@ if ( $debug ) {
 	exit;
 };
 
+$teixml = $doc->toString(1);
+if ( $nospace ) {
+	$teixml =~ s/<\/tok>\s+/<\/tok>/gsmi;
+	$teixml =~ s/\s+<tok(?=>| )/<tok/gsmi;
+};
+
 open FILE, ">$output";
 print "Writing output to $output";
-print FILE $doc->toString(1);
+print FILE $teixml;
 close FILE;
 
 
