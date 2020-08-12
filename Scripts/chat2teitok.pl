@@ -29,16 +29,23 @@ $teiheader = $doc->createElement("teiHeader"); $doc->firstChild->addChild($teihe
 $text = $doc->createElement("text"); $doc->firstChild->addChild($text);
 
 $xps{'Comment'} = ["/TEI/teiHeader/notesStmt", "note"];
-$xps{'PID'} = ["/TEI/teiHeader/fileDesc/titleStmt", "title"];
+$xps{'Title'} = ["/TEI/teiHeader/fileDesc/titleStmt", "title"];
 $xps{'Date'} = ["/TEI/teiHeader/fileDesc/titleStmt", "date"];
 $xps{'Languages'} = ["/TEI/teiHeader/profileDesc/langUsage", "language", "ident"];
+$xps{'Language'} = ["/TEI/teiHeader/profileDesc/langUsage", "language", "ident"];
 $xps{'Location'} = ["/TEI/teiHeader/recordingStmt/recording", "location"];
 $xps{'Transcriber'} = ["/TEI/teiHeader/fileDesc/titleStmt/respStmt", "resp", "", "n", "Transcription"];
+$xps{'Creator'} = ["/TEI/teiHeader/fileDesc/titleStmt/respStmt", "resp", "", "n", "Creator"];
 $xps{'Types'} = ["/TEI/teiHeader/profileDesc/textClass/keywords", "term", "", "type", "genre"];
+$xps{'Subject'} = ["/TEI/teiHeader/profileDesc/textClass/keywords", "term", "", "type", "genre"];
+$xps{'Publisher'} = ["/TEI/teiHeader/fileDesc/publicationStmt", "publisher"];
+$xps{'PID'} = ["/TEI/teiHeader/fileDesc/publicationStmt", "idno", "", "type", "handle"];
 
 $elms{'G'} = ["milestone", "n"];
+$elms{'New Episode'} = ["milestone", "n"];
 
-@ids = ("langKnowledge/langKnown[\@level=\"first\"]","*name","*id","*??","\@sex","*","*","*role","*","*");
+# @ID: language|corpus|code|age|sex|group|SES|role|education|custom|
+@ids = ("langKnowledge/langKnown[\@level=\"first\"]","*corpus","*code","\@age","\@sex","./note[\@n=\"group\"]","./note[\@n=\"ethnicity\"]","*role","./education","./note[\@n=\"custom\"]");
 
 $convs{'CA'} = "CLAN";
 $convs{'heritage'} = "Heritage";
@@ -196,9 +203,15 @@ sub convutt ( $trans, $format ) {
 		$trans =~ s/&lt;(.*?)&gt;/<del reason="reformulation">\1<\/del>/g;
 		$trans =~ s/&amp;([^ <>]+)/<del reason="truncation">\1<\/del>/g;
 
+		$trans =~ s/\((.*?)\)/<ex>\1<\/ex>/g;
+
+		$trans =~ s/([^ ]+)@([^ ]+)/<sic n="\2">\1<\/sic>/g;
+
+		$trans =~ s/xxx/<gap reason="unintelligible">xxx<\/gap>/g;
+		$trans =~ s/www/<gap reason="non-transcribed"\/>/g;
+
 		$trans =~ s/\[\/\]/<pause type="short"\/>/g;
 		$trans =~ s/\[\/\/\]/<pause type="long"\/>/g;
-
 	}; 
 	
 	
