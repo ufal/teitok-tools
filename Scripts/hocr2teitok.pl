@@ -142,6 +142,8 @@ $teixml =~ s/<\/lb>//g; $teixml =~ s/<lb([^>]*)>/<lb\1\/>/g;
 $teixml =~ s/<\/pb>//g; $teixml =~ s/<pb([^>]*)>/<pb\1\/>/g;
 $teixml =~ s/<\/torem>//g; $teixml =~ s/<torem([^>]*)>//g;
 
+$teixml =~ s/<!DOCTYPE.*?>//g; 
+
 open FILE, ">$output";
 print "Writing output to $output";
 print FILE $teixml;
