@@ -49,6 +49,8 @@ close FILE;
 
 $rawtext =~ s/\n\s+(?!\(\d)/ /g;
 
+if ( !$options && $rawtext !~ /@Options/ && $rawtext =~ /(\d+)_(\d+)/ ) { $options = "CA"; };
+
 foreach $line  ( split ( "\n", $rawtext ) ) {
 	$line =~ s/[\r\n]//g; $line =~ s/\0//g;
 
