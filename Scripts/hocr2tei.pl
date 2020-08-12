@@ -1,6 +1,6 @@
 # hOCR2TEI.pl
 # convert a hOCR (pe from tesseract) to TEI
-# (c) Maarten Janssen, 2016
+# Maarten Janssen, 2016
 
 use XML::LibXML;
 use Getopt::Long;
@@ -14,84 +14,181 @@ binmode(STDOUT, ":utf8");
             'debug' => \$debug, # debugging mode
             'file=s' => \$filename, # filename
             'morerev=s' => \$morerev, # add additional revisionStmt
+            'output=s' => \$output, # output file
             'strippath' => \$strippath, # strip path from facs name
             );
 
 if ( !$filename ) { $filename = shift; };
+( $basename = $filename ) =~ s/.*\///; $basename =~ s/\..*//;
+if ( !$output ) { $output = $basename.".xml"; };
 
 $today = strftime "%Y-%m-%d", localtime;
 
 $/ = undef;
 open FILE, $filename;
 binmode(FILE, ":utf8");
-$text = <FILE>;
+$raw = <FILE>;
 close FILE;
 
-$text =~ s/.*<body>//smi;
-$text =~ s/<\/body>.*//smi;
+$raw =~ s/ xmlns=".*?"//g;
+
+# Check if this is valid XML to start with
+$parser = XML::LibXML->new(); $doc = "";
+eval {
+	$doc = $parser->load_xml(string => $raw, {  load_ext_dtd => 0 });
+};
+if ( !$doc ) { 
+	print "Invalid XML in $filename";
+	open OUTFILE, ">wrong.xml";
+	print OUTFILE $raw;
+	binmode(OUTFILE, ":utf8");
+	close OUTFILE;
+	exit;
+};
+
+$doc->documentElement()->setName("TEI");
+$teiheader = $doc->createElement("teiHeader");
+
+$tmp = $doc->findnodes("/TEI/head")->item(0); $tmp->parentNode->removeChild($tmp);
+
+$body = $doc->findnodes("//body")->item(0);
+$body->setName("text");
+$body->parentNode->insertBefore($teiheader, $body);
 
 # Convert words
-while ( $text =~ /<span class='ocrx_word'[^>]*>(.*?)<\/span>/ ) {
-	$from = $&; $inner = $1;
-	$bbox = ""; if ( $from =~ /bbox (\d+ \d+ \d+ \d+)/ ) { $bbox = $1; };
-
-	$to = "<tok bbox=\"$bbox\">$inner</tok>";
+foreach $elm ( $doc->findnodes("//span[contains(\@class, 'ocrx_word')]") ) {
+	$title = $elm->getAttribute('title')."";
+	$bbox = ""; if ( $title =~ /bbox ([0-9.]+ [0-9.]+ [0-9.]+ [0-9.]+)/ ) { $bbox = $1; }; $bbox =~ s/\.\d+//g;
 	
-	$text =~ s/\Q$from\E/$to/;
+	$elm->setName("tok");
+	foreach $att ( $elm->attributes() ) {
+		$elm->removeAttribute($att->getName());
+	};
+	$elm->setAttribute("bbox", $bbox);
+	
+	while ( $elm->textContent =~ /(.*)(\p{isPunct})$/ ) {
+		$form = $1; $punct = $2;
+		$elm->findnodes('text()')->[0]->setData($form);
+		$newtok = $doc->createElement("tok"); $newtok->appendText($punct);
+		$elm->parentNode->insertAfter($newtok, $elm);
+	};
+
+	while ( $elm->textContent =~ /^(\p{isPunct})(.*)/ ) {
+		$form = $2; $punct = $1;
+		$elm->findnodes('text()')->[0]->setData($form);
+		$newtok = $doc->createElement("tok"); $newtok->appendText($punct);
+		$elm->parentNode->insertBefore($newtok, $elm);
+	};
+
 };
 
 # Convert pages
-while ( $text =~ /<div class='ocr_page'[^>]*>/ ) {
-	$from = $&;
-	$bbox = ""; if ( $from =~ /bbox (\d+ \d+ \d+ \d+)/ ) { $bbox = $1; };
-	$img = ""; if ( $from =~ /image "([^"]+)"/ ) { $img = $1; };
+foreach $elm ( $doc->findnodes("//div[contains(\@class, 'ocr_page')]") ) {
+	$title = $elm->getAttribute('title');
+	$bbox = ""; if ( $title =~ /bbox ([0-9.]+ [0-9.]+ [0-9.]+ [0-9.]+)/ ) { $bbox = $1; }; $bbox =~ s/\.\d+//g;
+	$facs = ""; if ( $title =~ /image ([^ ;"]+)/ ) { $facs = $1; $facs =~ s/\"//g; };
 
-	$to = "<pb bbox=\"$bbox\" facs=\"$img\"/>";
-	
-	$text =~ s/\Q$from\E/$to/;
+	if ( $strippath ) {
+		$facs =~ s/.*[\/\\]//;
+	};
+
+	$elm->setName("pb");
+	foreach $att ( $elm->attributes() ) {
+		$elm->removeAttribute($att->getName());
+	};
+	$elm->setAttribute("bbox", $bbox);
+	$elm->setAttribute("facs", $facs);
 };
 
 # Convert lines
-while ( $text =~ /<span class='ocr_line'[^>]*>/ ) {
-	$from = $&;
-	$bbox = ""; if ( $from =~ /bbox (\d+ \d+ \d+ \d+)/ ) { $bbox = $1; };
-
-	$to = "<lb bbox=\"$bbox\"/>";
+foreach $elm ( $doc->findnodes("//span[contains(\@class, 'ocr_line')]") ) {
+	$title = $elm->getAttribute('title');
+	$bbox = ""; if ( $title =~ /bbox ([0-9.]+ [0-9.]+ [0-9.]+ [0-9.]+)/ ) { $bbox = $1; }; $bbox =~ s/\.\d+//g;
 	
-	$text =~ s/\Q$from\E/$to/;
+	$elm->setName("lb");
+	foreach $att ( $elm->attributes() ) {
+		$elm->removeAttribute($att->getName());
+	};
+	$elm->setAttribute("bbox", $bbox);
 };
 
 # Convert paragraphs
-while ( $text =~ /<p class='ocr_par'[^>]*>/ ) {
-	$from = $&; 
-	$bbox = ""; if ( $from =~ /bbox (\d+ \d+ \d+ \d+)/ ) { $bbox = $1; };
-
-	$to = "<p bbox=\"$bbox\">";
+foreach $elm ( $doc->findnodes("//p[contains(\@class, 'ocr_par')]") ) {
+	$title = $elm->getAttribute('title');
+	$bbox = ""; if ( $title =~ /bbox ([0-9.]+ [0-9.]+ [0-9.]+ [0-9.]+)/ ) { $bbox = $1; }; $bbox =~ s/\.\d+//g;
 	
-	$text =~ s/\Q$from\E/$to/;
+	foreach $att ( $elm->attributes() ) {
+		$elm->removeAttribute($att->getName());
+	};
+	$elm->setAttribute("bbox", $bbox);
 };
 
-# Split off punctuation marks
-$text =~ s/(\p{isPunct})<\/tok>/<\/tok><tok>\1<\/tok>/g;
-$text =~ s/(<tok[^>]*>)(\p{isPunct})/<tok>\2<\/tok>\1/g;
-
-# Clean non-needed stuff
-$text =~ s/<div class='ocr_carea'[^>]*>//g;
-$text =~ s/<\/div>//g;
-$text =~ s/<\/span>//g;
-
-if ( $strippath ) {
-	$text =~ s/ facs="[^"]+\/(.*)"/facs="\1"/g;
+foreach $elm ( $doc->findnodes("//*[contains(\@title, 'bbox')]") ) {
+	$elm->setName("torem");
 };
 
-$tei = "<TEI>
-<teiHeader>
-<revisionDesc>$morerev<change who=\"hocr2tei\" when=\"$today\">Converted from hOCR</change></revisionDesc>
-</teiHeader>
-<text>
-$text
-</text>
-</TEI>";
 
-binmode(STDOUT, ":utf8");
-print $tei;
+# Add the revision statement
+$revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"hocr2teitok\"]");
+$when = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $when);
+$revnode->appendText("Converted from hOCR file $basename.xml");
+
+$teixml = $doc->toString;
+$teixml =~ s/<\/lb>//g; $teixml =~ s/<lb([^>]*)>/<lb\1\/>/g;
+$teixml =~ s/<\/pb>//g; $teixml =~ s/<pb([^>]*)>/<pb\1\/>/g;
+$teixml =~ s/<\/torem>//g; $teixml =~ s/<torem([^>]*)>//g;
+
+open FILE, ">$output";
+print "Writing output to $output";
+print FILE $teixml;
+close FILE;
+
+
+sub makenode ( $xml, $xquery ) {
+	my ( $xml, $xquery ) = @_;
+	@tmp = $xml->findnodes($xquery); 
+	if ( scalar @tmp ) { 
+		$node = shift(@tmp);
+		if ( $debug ) { print "Node exists: $xquery"; };
+		return $node;
+	} else {
+		if ( $xquery =~ /^(.*)\/(.*?)$/ ) {
+			my $parxp = $1; my $thisname = $2;
+			my $parnode = makenode($xml, $parxp);
+			$thisatts = "";
+			if ( $thisname =~ /^(.*)\[(.*?)\]$/ ) {
+				$thisname = $1; $thisatts = $2;
+			};
+			if ( $thisname =~ /^@(.*)/ ) {
+				$attname = $1;
+				$parnode->setAttribute($attname, '');
+				foreach $att ( $parnode->attributes() ) {
+					if ( $att->getName eq $attname ) {
+						return $att;
+					};
+				};
+			} else {
+				$newchild = XML::LibXML::Element->new( $thisname );
+			
+				# Set any attributes defined for this node
+				if ( $thisatts ne '' ) {
+					if ( $debug ) { print "setting attributes $thisatts"; };
+					foreach $ap ( split ( " and ", $thisatts ) ) {
+						if ( $ap =~ /\@([^ ]+) *= *"(.*?)"/ ) {
+							$an = $1; $av = $2; 
+							$newchild->setAttribute($an, $av);
+						};
+					};
+				};
+
+				if ( $debug ) { print "Creating node: $xquery ($thisname)"; };
+				$parnode->addChild($newchild);
+			};
+			
+		} else {
+			print "Failed to find or create node: $xquery";
+		};
+	};
+};
+
