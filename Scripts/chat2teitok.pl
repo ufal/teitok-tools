@@ -168,10 +168,12 @@ $basename =~ s/.*\///;
 $basename =~ s/\.[^.]+$//;
 
 # $doc->setEncoding();
+$teixml = $doc->toString(1);
+$teixml =~ s/<\?.*?\?>//;
 
 print "Writing output to $output";
 open OUTFILE, ">$output";
-print OUTFILE $doc->toString(1);
+print OUTFILE $teixml;
 close OUTFILE;
 
 sub convutt ( $trans, $format ) {
