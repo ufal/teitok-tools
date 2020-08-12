@@ -53,7 +53,7 @@ $rawxml =~ s/xmlns=/xmlnsoff=/;
 # Check if this is valid XML and get document type
 $parser = XML::LibXML->new(); $doc = "";
 eval {
-	$doc = $parser->load_xml(string => $rawxml);
+	$doc = $parser->load_xml(string => $rawxml, {  load_ext_dtd => 0 });
 };
 if ( !$doc ) { print "Invalid XML in $filename"; exit; };
 $filetype = $doc->firstChild->getName;
