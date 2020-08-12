@@ -49,7 +49,10 @@ if ( !$doc ) {
 $doc->documentElement()->setName("TEI");
 $teiheader = $doc->createElement("teiHeader");
 
-$tmp = $doc->findnodes("/TEI/head")->item(0); $tmp->parentNode->removeChild($tmp);
+# Remove all <head> elements
+foreach $elm ( $doc->findnodes("/TEI/head")->item(0) ) {
+	$elm->parentNode->removeChild($elm);
+};
 
 $body = $doc->findnodes("//body")->item(0);
 $body->setName("text");
