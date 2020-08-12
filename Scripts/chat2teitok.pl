@@ -2,6 +2,7 @@ use utf8;
 use XML::LibXML;
 use Data::Dumper;
 use Getopt::Long;
+use Encode qw(decode encode);
 
  GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
@@ -22,6 +23,7 @@ if ( !$output ) { ( $output = $filename ) =~ s/\..+?$/.xml/; };
 $parser = XML::LibXML->new(); $doc = "";
 $doc = XML::LibXML::Document->new(1.0, "UTF-8");
 $root = $doc->createElement("TEI");
+$doc->setEncoding("UTF8");
 $doc->setDocumentElement($root);
 $teiheader = $doc->createElement("teiHeader"); $doc->firstChild->addChild($teiheader);
 $text = $doc->createElement("text"); $doc->firstChild->addChild($text);
@@ -56,7 +58,8 @@ foreach $line  ( split ( "\n", $rawtext ) ) {
 
 	if ( $line =~ /@([^:]+):\s*(.*)/ ) {
 		# Metadata line	
-		$fld = $1; $val = $2;
+		$fld = $1; $orgval = $2; 
+		$val = sanitize($orgval);
 		if ( $fld eq 'Options' ) {
 			if ( !$transform ) { $transform = $val; };
 		} elsif ( $fld eq 'Participants' ) {
@@ -164,6 +167,8 @@ $basename = $filename;
 $basename =~ s/.*\///;
 $basename =~ s/\.[^.]+$//;
 
+# $doc->setEncoding();
+
 print "Writing output to $output";
 open OUTFILE, ">$output";
 print OUTFILE $doc->toString(1);
@@ -256,3 +261,10 @@ sub makenode ( $xml, $xquery ) {
 	};
 };
 
+sub sanitize ( $string ) {
+	$string = @_[0];
+	
+	$string =~ s/[^\x09\x0A\x0D\x20-\xFF\x85\xA0\uD7FF\uE000-\uFDCF\uFDE0-\uFFFD]//gm;
+	
+	return $string;
+};
