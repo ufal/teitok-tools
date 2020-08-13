@@ -74,11 +74,7 @@ foreach $bboxelm ( $doc->findnodes("//text//*[\@bbox]") ) {
 		$graph = $doc->createElement( 'graphic' );
 		$graph->setAttribute('url', $page->getAttribute('facs'));
 		$spag->addChild($graph);
-		$facs = $doc->findnodes(".//facsimile")->item(0);
-		if ( !$facs ) { 
-			$facs = $doc->createElement( 'facsimile' );
-			$doc->firstChild->addChild($facs);
-		};
+		$facs = makenode($doc, "/TEI/facsimile");
 		$facs->addChild($spag);
 		$spid = 'PF'.$pcnt++; $zcnt{$spid} = 1;
 		$spag->setAttribute('xml:id', $spid);
@@ -192,6 +188,9 @@ foreach $utt ( $doc->findnodes("//text//u") ) {
 	$start = $utt->getAttribute('start');
 	$end = $utt->getAttribute('end');
 
+	$who = $utt->getAttribute('who');
+	$utt->setAttribute('who', "#$who"); # Add a # since the @who is an id-ref
+
 	$times{$start} = 1;
 	$times{$end} = 1;
 
@@ -232,3 +231,41 @@ print "Writing converted file to $outfile\n";
 open OUTFILE, ">$outfile";
 print OUTFILE $doc->toString;	
 close OUTFLE;
+
+sub makenode ( $xml, $xquery ) {
+	my ( $xml, $xquery ) = @_;
+	@tmp = $xml->findnodes($xquery); 
+	if ( scalar @tmp ) { 
+		$node = shift(@tmp);
+		if ( $debug ) { print "Node exists: $xquery"; };
+		return $node;
+	} else {
+		if ( $xquery =~ /^(.*)\/(.*?)$/ ) {
+			my $parxp = $1; my $thisname = $2;
+			my $parnode = makenode($xml, $parxp);
+			$thisatts = "";
+			if ( $thisname =~ /^(.*)\[(.*?)\]$/ ) {
+				$thisname = $1; $thisatts = $2;
+			};
+			$newchild = XML::LibXML::Element->new( $thisname );
+			
+			# Set any attributes defined for this node
+			if ( $thisatts ne '' ) {
+				if ( $debug ) { print "setting attributes $thisatts"; };
+				foreach $ap ( split ( " and ", $thisatts ) ) {
+					if ( $ap =~ /\@([^ ]+) *= *"(.*?)"/ ) {
+						$an = $1; $av = $2; 
+						$newchild->setAttribute($an, $av);
+					};
+				};
+			};
+
+			if ( $debug ) { print "Creating node: $xquery ($thisname)"; };
+			$parnode->addChild($newchild);
+			
+		} else {
+			print "Failed to find or create node: $xquery";
+		};
+	};
+};
+
