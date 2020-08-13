@@ -15,6 +15,7 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'writeback' => \$writeback, # write back to original file or put in new file
+            'output=s' => \$output, # which UDPIPE model to use
             'file=s' => \$filename, # which UDPIPE model to use
             'folder=s' => \$folder, # Originals folder
             );
@@ -222,13 +223,13 @@ foreach $time ( @timeline ) {
 }; 
 
 if ( $writeback ) { 
-	$outfile = $filename;
+	$output = $filename;
 	`mv $orgfile $orgfile.teitok`;
-} else {
-	( $outfile = $filename ) =~ s/\.([^.]+)$/\.p5\.\1/;
+} elsif ( !$output ) {
+	( $output = $filename ) =~ s/\.([^.]+)$/-p5\.\1/;
 };
-print "Writing converted file to $outfile\n";
-open OUTFILE, ">$outfile";
+print "Writing converted file to $output\n";
+open OUTFILE, ">$output";
 print OUTFILE $doc->toString;	
 close OUTFLE;
 
