@@ -48,6 +48,11 @@ if ( !$doc ) { print "Invalid XML in $filename"; exit; };
 
 if ( !$output ) { ( $output = $filename ) =~ s/\.xml/.conllu/; };
 
+if ( !$doc->findnodes("//tok") ) {
+	print "Error: cannot convert untokenized files to CoNNL-U";
+	exit;
+};
+
 print "Writing converted file to $output\n";
 open OUTFILE, ">$output";
 binmode(OUTFILE, ":utf8");
