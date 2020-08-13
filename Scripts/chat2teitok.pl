@@ -1,3 +1,6 @@
+# Conversion from a CHAT transcript file (.cha) to the TEITOK format
+# Maarten Janssen, 2020
+
 use utf8;
 use XML::LibXML;
 use Data::Dumper;
@@ -58,7 +61,9 @@ close FILE;
 
 $rawtext =~ s/\n\s+(?!\(\d)/ /g;
 
-if ( !$options && $rawtext !~ /@Options/ && $rawtext =~ /(\d+)_(\d+)/ ) { $options = "CA"; };
+if ( !$options && $rawtext !~ /\@Options/ ) {
+	if ( $rawtext =~ /(\d+)_(\d+)/ ) { $options = "CA";  };
+};
 
 foreach $line  ( split ( "\n", $rawtext ) ) {
 	$line =~ s/[\r\n]//g; $line =~ s/\0//g;
@@ -191,13 +196,14 @@ sub convutt ( $trans, $format ) {
 	$trans =~ s/</&lt;/g;
 	$trans =~ s/>/&gt;/g;
 	
+	if ( $trans =~ s/(\d+)_(\d+)// ) {
+		$begin = ($1/1000); $end = ($2/1000);
+		$timing = " begin=\"$begin\" end=\"$end\"";  
+	};
 	if ( $format eq 'CA' ) {
 	
 		# print $trans;
-		if ( $trans =~ s/(\d+)_(\d+)// ) {
-			$begin = ($1/1000); $end = ($2/1000);
-			$timing = " begin=\"$begin\" end=\"$end\"";  
-		};
+		
 	
 	} elsif ( $format eq 'heritage' ) {
 		$trans =~ s/&lt;(.*?)&gt;/<del reason="reformulation">\1<\/del>/g;
