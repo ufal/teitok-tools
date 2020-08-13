@@ -15,7 +15,8 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'writeback' => \$writeback, # write back to original file or put in new file
-            'file=s' => \$filename, # which UDPIPE model to use
+            'file=s' => \$filename, # input file name
+            'output=s' => \$output, # output file name
             'folder=s' => \$folder, # Originals folder
             'pos=s' => \$posatt, # XPOS tag
             'tagmapping=s' => \$tagmapping, # XPOS tag
@@ -45,10 +46,10 @@ eval {
 };
 if ( !$doc ) { print "Invalid XML in $filename"; exit; };
 
-( $outfile = $filename ) =~ s/\.xml/.conllu/;
+if ( !$output ) { ( $output = $filename ) =~ s/\.xml/.conllu/; };
 
-print "Writing converted file to $outfile\n";
-open OUTFILE, ">$outfile";
+print "Writing converted file to $output\n";
+open OUTFILE, ">$output";
 binmode(OUTFILE, ":utf8");
 
 # Convert <dtok> to <tok> (to be dealt with later)

@@ -15,6 +15,7 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'file=s' => \$filename, # which UDPIPE model to use
+            'output=s' => \$output, # which UDPIPE model to use
             'morerev=s' => \$morerev, # language of input
             'split' => \$split, # Split into 1 file per language
             );
@@ -43,9 +44,9 @@ foreach $tu ( $doc->findnodes("//tu") ) {
 
 if ( $split ) {
 	while ( ( $key, $val) = each ( %langparts) ) {
-		( $outfile = $filename ) =~ s/\.tmx/-$key.xml/;
-		print "Writing converted file to $outfile\n";
-		open OUTFILE, ">$outfile";
+		( $output = $filename ) =~ s/\.tmx/-$key.xml/;
+		print "Writing converted file to $output\n";
+		open OUTFILE, ">$output";
 		binmode(OUTFILE, ":utf8");
 		print OUTFILE "<TEI>\n<teiHeader>
 <revisionDesc>
@@ -54,9 +55,9 @@ if ( $split ) {
 		close OUTFLE;
 	};
 } else {
-	( $outfile = $filename ) =~ s/\.tmx/.xml/;
-	print "Writing converted file to $outfile\n";
-	open OUTFILE, ">$outfile";
+	if ( !$output ) { ( $output = $filename ) =~ s/\.tmx/.xml/; };
+	print "Writing converted file to $output\n";
+	open OUTFILE, ">$output";
 	binmode(OUTFILE, ":utf8");
 	print OUTFILE "<TEI>\n<teiHeader>
 <revisionDesc>
