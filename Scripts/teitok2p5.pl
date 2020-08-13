@@ -218,7 +218,7 @@ foreach $time ( @timeline ) {
 	$last = $time; $lastidx = $thisidx;
 	
 	foreach $utt ( $doc->findnodes("//text//u[\@start=\"$time\"]") ) { 
-		if ( $utt->getAttribute('begin') {
+		if ( $utt->getAttribute('begin') ) {
 			$utt->setAttribute('begin', '#'.$thisidx); 
 		} else {
 			$utt->setAttribute('start', '#'.$thisidx); 
