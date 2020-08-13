@@ -217,13 +217,8 @@ foreach $time ( @timeline ) {
 	$tlnode->addChild($tlwhen);
 	$last = $time; $lastidx = $thisidx;
 	
-	foreach $utt ( $doc->findnodes("//text//u[\@start=\"$time\"]") ) { 
-		if ( $utt->getAttribute('begin') ) {
-			$utt->setAttribute('begin', '#'.$thisidx); 
-		} else {
-			$utt->setAttribute('start', '#'.$thisidx); 
-		};
-	};
+	foreach $utt ( $doc->findnodes("//text//u[\@start=\"$time\"]") ) { $utt->setAttribute('start', '#'.$thisidx); };
+	foreach $utt ( $doc->findnodes("//text//u[\@begin=\"$time\"]") ) { $utt->setAttribute('begin', '#'.$thisidx); };
 	foreach $utt ( $doc->findnodes("//text//u[\@end=\"$time\"]") ) { $utt->setAttribute('end', '#'.$thisidx); };
 	
 }; 
