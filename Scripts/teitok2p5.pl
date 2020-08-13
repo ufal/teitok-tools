@@ -186,7 +186,7 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 
 # Convert sound start/end to <timeline> elements
 foreach $utt ( $doc->findnodes("//text//u") ) {
-	$start = $utt->getAttribute('start') or $start = $utt->getAttribute('start');
+	$start = $utt->getAttribute('start') or $start = $utt->getAttribute('begin');
 	$end = $utt->getAttribute('end');
 
 	$who = $utt->getAttribute('who');
