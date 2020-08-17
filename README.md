@@ -3,9 +3,9 @@
 Conversion tools to, from, and related to the tokenized TEI/XML format. 
 These scripts can be used independently from the [TEITOK](http://www.teitok.org) platform, even though they
 were build primarily with TEITOK in mind. 
-More scripts will be added over time.
+More scripts will be added over time. This project also contains a collection of conversion scripts, which are described in the [Wiki](https://github.com/ufal/teitok-tools/wiki).
 
-Current scripts:
+Current NLP scripts:
 
 * `	udpipe2teitok.pl` - create TEITOK/XML files parsed with UDPIPE out of raw text files
 * `manatee2teitok.pl` - create a TEITOK project out of an existing KonText corpus 
