@@ -21,7 +21,7 @@ if ( !-e $filename && $filename !~ /\.ann$/ ) { $filename .= ".ann"; };
 if ( !-e $filename ) { print "No such file: $filename"; };
 ( $basename = $filename ) =~ s/\.[^.]+$//; $basename =~ s/.*\///;
 if ( !$plainfile ) { ( $plainfile = $filename ) =~ s/\.ann$/.txt/; };
-if ( !$plainfile ) { ( $plainfile = $filename ) =~ s/\.ann$/.xml/; };
+if ( !$outfile ) { ( $plainfile = $outfile ) =~ s/\.ann$/.xml/; };
 
 $/ = undef;
 # binmode(STDOUT, ":utf8");
@@ -157,11 +157,11 @@ while (<FILE>) {
 };
 close FILE;
 
-open FILE, ">$outfolder/$basename.xml";
+open FILE, ">$outfile";
 # binmode(FILE, ":utf8");
 print FILE $xml->toString;
 close FILE;
-print "Wrote xml file to $outfolder/$basename.xml";
+print "Wrote xml file to $outfile";
 
 if ( $annfolder ) {
 	open FILE, ">$annfolder/brat_$basename.xml";
