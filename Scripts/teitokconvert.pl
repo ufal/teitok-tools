@@ -51,6 +51,7 @@ print "Input file: $filename = $informat";
 	"text/x-toolbox-text" => "tbt2teitok.pl",
 	"application/x-tmx+xml" => "tmx2teitok.pl",	
 	"text/x-conllu" => "conllu2teitok.pl",
+	"text/x-brat" => "brat2teitok.pl",
 );
 %export = (
 	"text/x-conllu" => "teitok2conllu.pl",
