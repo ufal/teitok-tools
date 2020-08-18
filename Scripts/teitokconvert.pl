@@ -57,15 +57,15 @@ print "Input file: $filename = $informat";
 );
 
 if (  $informat eq 'unknown' ) {
-	print "Unable to establish file format for $filename"; exit;
+	print "Error: unable to establish file format for $filename"; exit;
 };
 if ( !$import{$informat} ) {
-	print "No conversions available from $informat"; exit;
+	print "Error: no conversions available from $informat"; exit;
 };
 
 if ( $outformat ne 'application/teitok+xml' ) {
 	if ( !$export{$outformat} ) {
-		print "No conversions available to $outformat"; exit;
+		print "Error: no conversions available to $outformat"; exit;
 	};
 	$tempfile = "$basename-temp.xml";
 } else {

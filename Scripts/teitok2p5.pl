@@ -84,8 +84,8 @@ foreach $bboxelm ( $doc->findnodes("//text//*[\@bbox]") ) {
 	( $x1, $y1, $x2, $y2 ) = split ( " ", $bboxelm->getAttribute('bbox') );
 	$zone = $doc->createElement( 'zone' );
 	$zone->setAttribute('ulx', $x1);
-	$zone->setAttribute('uly', $x2);
-	$zone->setAttribute('lrx', $y1);
+	$zone->setAttribute('uly', $y1);
+	$zone->setAttribute('lrx', $x1);
 	$zone->setAttribute('lry', $y2);
 	$zid = $spid.'-Z'.$zcnt{$spid}++;
 	$zone->setAttribute('xml:id', $zid);

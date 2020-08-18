@@ -68,6 +68,10 @@ while ( <FILE> ) {
 
 close FILE;
 
+if ( !%intervals || scalar %intervals == 0 ) {
+	print "Error: no intervals found"; exit;
+};
+
 while ( ( $tierid, $val ) = each ( %intervals ) ) {
 	%tierdata = %{$val};
 	if ( scalar @tierlist > 0 && !in_array($tierid, \@tierlist) ) {

@@ -61,9 +61,10 @@ binmode(OUTFILE, ":utf8");
 $scnt = 1;
 
 $sents = $doc->findnodes("//s");
+if ( !scalar $sents ) { $sents = $doc->findnodes("//u"); };
 if ( $sents ) { 
 	$sntcnt = 1;
-	foreach $snt ( $doc->findnodes("//s") ) {
+	foreach $snt ( @{$sents} ) {
 		$sentid = $snt->getAttribute('id');
 		if ( !$sentid ) { $sentid = "s-".$sntcnt++; $snt->setAttribute('id', $sentid); };
 		print OUTFILE "# sent_id $sentid";
