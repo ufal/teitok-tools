@@ -11,7 +11,7 @@ use XML::LibXML;
             'plain=s' => \$plainfile, # location of the plain text file
             'morerev=s' => \$morerev, # more revision statement
             'annfolder=s' => \$annfolder, # folder to write annotation to
-            'output=s' => \$outfolder, # folder to write the brat file to
+            'output=s' => \$outfile, # folder to write the brat file to
             );
 
 $/ = undef; $\ = "\n"; $, = "\t";
@@ -21,7 +21,7 @@ if ( !-e $filename && $filename !~ /\.ann$/ ) { $filename .= ".ann"; };
 if ( !-e $filename ) { print "No such file: $filename"; };
 ( $basename = $filename ) =~ s/\.[^.]+$//; $basename =~ s/.*\///;
 if ( !$plainfile ) { ( $plainfile = $filename ) =~ s/\.ann$/.txt/; };
-if ( !$outfile ) { ( $outfolder = $filename ) =~ s/[^\/]+$//;if ( !$outfolder ) { $outfolder = ".";}; };
+if ( !$plainfile ) { ( $plainfile = $filename ) =~ s/\.ann$/.xml/; };
 
 $/ = undef;
 # binmode(STDOUT, ":utf8");
