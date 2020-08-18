@@ -18,10 +18,13 @@ $/ = undef; $\ = "\n"; $, = "\t";
 
 if ( !$filename ) { $filename = shift; };
 if ( !-e $filename && $filename !~ /\.ann$/ ) { $filename .= ".ann"; };
-if ( !-e $filename ) { print "No such file: $filename"; };
+if ( !-e $filename ) { print "Error: file not found - $filename"; };
 ( $basename = $filename ) =~ s/\.[^.]+$//; $basename =~ s/.*\///;
 if ( !$plainfile ) { ( $plainfile = $filename ) =~ s/\.ann$/.txt/; };
 if ( !$outfile ) { ( $plainfile = $outfile ) =~ s/\.ann$/.xml/; };
+
+if ( !-e $plainfile ) { sleep 5; };
+if ( !-e $plainfile ) { print "Error: file not found - $basename.txt"; };
 
 $/ = undef;
 # binmode(STDOUT, ":utf8");
