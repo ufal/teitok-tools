@@ -108,6 +108,9 @@ sub treatfile ( $fn ) {
 		};
 		if ( !$xml ) { 
 			print "Invalid XML in $fn";
+			open FILE, ">wrong.xml";
+			print FILE $rawxml;
+			close FILE;
 			return -1;
 		};
 		
