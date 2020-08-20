@@ -81,15 +81,36 @@ sub treatfile ( $fn ) {
 	if ( !-d $fn ) { 
 		print "\nTreating $fn";
 	
+		$/ = undef;
+		open FILE, $fn;
+		binmode (FILE, ":utf8");
+		$rawxml = <FILE>;
+		close FILE;
+		
 		# read the XML
+		if ( !$tokxp ) { $tokxp = "//$token"; };
+		
+		if ( $rawxml !~ /<\/$token>/  ) {
+			print "Not tokenized - tokenizing";
+			( $tokr = $scriptname ) =~ s/parseudpipe/xmltokenize/;
+			$cmd = "perl $tokr $fn";  
+			print $cmd;
+			`$cmd`;
+			open FILE, $fn;
+			binmode (FILE, ":utf8");
+			$rawxml = <FILE>;
+			close FILE;
+		};
+		
+		$rawxml =~ s/xmlns=/xmlnstmp=/;
 		eval {
-			$xml = $parser->load_xml(location => $fn, load_ext_dtd => 0);
+			$xml = $parser->load_xml(string => $rawxml, load_ext_dtd => 0);
 		};
 		if ( !$xml ) { 
 			print "Invalid XML in $fn";
-			continue;
+			return -1;
 		};
-		if ( !$tokxp ) { $tokxp = "//$token"; };
+		
 		$num = 1; 
 		if ( $sent || $sentxp ) { 
 			$sntcnt = 1;
@@ -126,6 +147,7 @@ sub treatfile ( $fn ) {
 			};
 		};
 		utf8::upgrade($toklist);
+
 	
 		if ( !$model ) {
 			$lang = detectlang($rawtxt);
@@ -163,8 +185,13 @@ sub treatfile ( $fn ) {
 			`mkdir -p $tmp`;
 		};
 		print "Writing parsed file to $outfile\n";
+
+		$rawxml = $xml->toString;
+		$rawxml =~ s/xmlnstmp=/xmlns=/;
+
 		open OUTFILE, ">$outfile";
-		print OUTFILE $xml->toString;	
+		binmode (OUTFILE, ":utf8");		
+		print OUTFILE $rawxml;	
 		close OUTFLE;
 		
 	};
@@ -306,7 +333,7 @@ sub putbacksent($sent, $tok) {
 				# Multiword
 			} else {
 				# DToks
-				$dtokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
+				$dtokxml = "<tok id=\"w-".$tokid{$i}."\" ord=\"$i\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
 			};
 		}		
 		if ( $dtokxml ) {
@@ -315,6 +342,7 @@ sub putbacksent($sent, $tok) {
 			$tokid = $misc; 
 			$tmp = "//".$token."[\@id=\"$tokid\"]";
 			$tok = $xml->findnodes($tmp)->item(0);
+			if ( $i ) { $tok->setAttribute('ord', $i); };
 			if ( $lemma ) { $tok->setAttribute('lemma', $lemma); };
 			if ( $upos ) { $tok->setAttribute('upos', $upos); };
 			if ( $xpos ) { $tok->setAttribute('xpos', $xpos); };
