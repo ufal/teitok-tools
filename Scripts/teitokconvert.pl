@@ -28,6 +28,7 @@ $scriptname = $0;
 	"FoLiA" => "text/folia+xml",
 	"alto" => "text/alto+xml",
 	"tmx" => "application/x-tmx+xml",
+	"D-Spin" => "text/tcf+xml",
  );
 
 if ( !$filename ) { $filename = shift; };
@@ -45,6 +46,7 @@ print "Input file: $filename = $informat";
 %import = (
 	"text/x-chat" => "chat2teitok.pl",
 	"text/folia+xml" => "folia2teitok.pl",
+	"text/tcf+xml" => "tcf2teitok.pl",
 	"application/exmaralda+xml" => "exb2tei.pl",
 	"text/vnd.hocr+html" => "hocr2teitok.pl",
 	"text/praat-textgrid" => "praat2tei.pl",
