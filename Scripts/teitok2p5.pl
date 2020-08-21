@@ -22,6 +22,10 @@ GetOptions ( ## Command line options
 
 $\ = "\n"; $, = "\t";
 
+if ( !$filename ) { $filename = shift; };
+( $basename = $filename ) =~ s/.*\///; $basename =~ s/\..*//;
+if ( !$output ) { $output = $basename."-p5.xml"; };
+
 $parser = XML::LibXML->new(); $doc = "";
 eval {
 	$doc = $parser->load_xml(location => $filename);
@@ -53,8 +57,6 @@ foreach $tk ( $doc->findnodes("//text//tok[dtok]") ) {
 	};
 };
 
-# Deal with the namespace
-$doc->firstChild->setAttribute('xmlns', 'http://www.tei-c.org/ns/1.0');
 
 # Convert bbox  to <surface> elements
 $pcnt = 1; 
@@ -194,8 +196,9 @@ foreach $utt ( $doc->findnodes("//text//u") ) {
 
 	$times{$start} = 1;
 	$times{$end} = 1;
-
+	$timed = 1;
 };
+if ( $timed ) {
 $tlnode = $doc->findnodes("//timeline")->item(0);
 if ( !$tlnode ) { 
 	$text = $doc->findnodes("//text")->item(0); 
@@ -221,7 +224,16 @@ foreach $time ( @timeline ) {
 	foreach $utt ( $doc->findnodes("//text//u[\@begin=\"$time\"]") ) { $utt->setAttribute('begin', '#'.$thisidx); };
 	foreach $utt ( $doc->findnodes("//text//u[\@end=\"$time\"]") ) { $utt->setAttribute('end', '#'.$thisidx); };
 	
-}; 
+};};
+
+# Add the revision statement
+$revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"teitok2p5\"]");
+$when = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $when);
+$revnode->appendText("Converted from TEITOK file $basename.xml");
+
+# Deal with the namespace
+$doc->firstChild->setAttribute('xmlns', 'http://www.tei-c.org/ns/1.0');
 
 if ( $writeback ) { 
 	$output = $filename;

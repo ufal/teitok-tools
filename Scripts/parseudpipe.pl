@@ -222,7 +222,13 @@ sub detectlang ( $text ) {
 	$url = 'http://quest.ms.mff.cuni.cz/teitok-dev/teitok/cwali/index.php?action=cwali';
 	$res = $ua->post( $url, \%form );
 	$jsdat = $res->decoded_content;
-	$jsonkont = decode_json($jsdat);
+	eval {
+		$jsonkont = decode_json($jsdat);
+	};
+	if ( !$jsonkont ) {
+		print "Error: failed to get language data back from CWALI";
+		return "xxx";
+	};
 	$iso = $jsonkont->{'best'}; $name = $jsonkont->{'name'};
 	$model = $code2model{$iso} or $model = $lang2model{$name}; 
 	print " - Language detected: $iso / $name, using $model";
