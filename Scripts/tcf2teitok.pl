@@ -5,14 +5,14 @@ use POSIX qw(strftime);
 
 # Convert PML files to TEITOK/XML
  
- GetOptions ( ## Command line options
-            'debug' => \$debug, # debugging mode
-            'test' => \$test, # tokenize to string, do not change the database
-            'file=s' => \$filename, # input file
-            'output=s' => \$output, # output file
-            'morerev=s' => \$morerev, # language of input
-            'nospace' => \$nospace, # convert to whitespace-sensitive XML
-            );
+GetOptions ( ## Command line options
+	'debug' => \$debug, # debugging mode
+	'test' => \$test, # tokenize to string, do not change the database
+	'file=s' => \$filename, # input file
+	'output=s' => \$output, # output file
+	'morerev=s' => \$morerev, # language of input
+	'nospace' => \$nospace, # convert to whitespace-sensitive XML
+	);
 
 $\ = "\n"; $, = "\t";
 
@@ -92,6 +92,7 @@ if ( $doc->findnodes("//sentences") ) {
 			$teitok->appendText($forms{$tokid});
 			$teitok->setAttribute("id", $tokid);
 			$tokhash{$tokid} = $teitok;
+			$tosent{$tokid} = $sent->getAttribute("ID");
 			$teis->addChild($teitok);
 			
 			while ( ( $key, $val ) = each ( %{$atts{$tokid}} ) ) {
@@ -109,6 +110,7 @@ if ( $doc->findnodes("//sentences") ) {
 	};
 };
 
+# Named Entities
 foreach $node ( $doc->findnodes("//namedEntities//entity") ) {
 	@toklist = split(" ", $node->getAttribute("tokenIDs"));
 	$first = $tokhash{$toklist[0]};
@@ -123,6 +125,36 @@ foreach $node ( $doc->findnodes("//namedEntities//entity") ) {
 	};
 };
 
+# Parse trees
+if ( $doc->findnodes("//parsing") ) {
+	$forest = $tei->createElement("forest");
+	$text->addChild($forest);
+	foreach $tree ( $doc->findnodes("//parsing//parse") ) {
+		$tmp = $doc->findnodes(".//constituent[\@tokenIDs]")->item(0)->getAttribute("tokenIDs");
+		@tmp2 =  split(" ", $tmp);
+		$firsttok = $tmp2[0];
+		$tree->setAttribute("sentid", $tosent{$firsttok});
+		$tree->setName("eTree");
+		foreach $node ( $tree->findnodes(".//constituent") ) {
+			$node->setName("eTree");
+			if ( $node->getAttribute("cat") ) {
+				$node->setAttribute("Label", $node->getAttribute("cat")."");
+				$node->removeAttribute("cat");
+			};
+			$node->setAttribute("id", $node->getAttribute("ID")."");
+			$node->removeAttribute("ID");
+			if ( $node->getAttribute("tokenIDs") ) {
+				$tokid =  $node->getAttribute("tokenIDs")."";
+				$node->setAttribute("tokid", $tokid);
+				$node->removeAttribute("tokenIDs");
+				$leaf = $tei->createElement("eLeaf");
+				$node->addChild($leaf);
+				$leaf->setAttribute("Text", $forms{$tokid});
+			};
+		};
+		$forest->addChild($tree);
+	};
+};
 
 # Add the revision statement
 $revnode = makenode($tei, "/TEI/teiHeader/revisionDesc/change[\@who=\"tcf2teitok\"]");
