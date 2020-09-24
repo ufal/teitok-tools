@@ -9,7 +9,6 @@ GetOptions ( ## Command line options
             'file=s' => \$filename, # which UDPIPE model to use
             'output=s' => \$output, # which UDPIPE model to use
             'morerev=s' => \$morerev, # language of input
-            'split' => \$split, # Split into 1 file per language
             );
 
 $\ = "\n"; $, = "\t";

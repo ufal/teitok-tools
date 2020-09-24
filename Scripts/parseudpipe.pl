@@ -193,7 +193,7 @@ sub treatfile ( $fn ) {
 		$rawxml =~ s/xmlnstmp=/xmlns=/;
 
 		open OUTFILE, ">$outfile";
-		binmode (OUTFILE, ":utf8");		
+		# binmode (OUTFILE, ":utf8");		
 		print OUTFILE $rawxml;	
 		close OUTFLE;
 		
