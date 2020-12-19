@@ -36,8 +36,9 @@ if ( $raw =~ /<othermeta origin="([^"]+)">(.*)<\/othermeta>/smi ) {
 if ( $raw =~ /<original_format>([^><]+)<\/original_format>/ ) { $localmeta .= " original_format=\"$1\""; };
 if ( $raw =~ /<doc([^>]+)>/ ) { $docmeta = $1; };
 
-	$raw =~ s/.*?<para>/<para>/smi;
+	$raw =~ s/.*?<doc>//smi;
 	$raw =~ s/\n\s*<\/doc>.*//smi;
+	$raw =~ s/<docmeta>.*?<\/docmeta>.*//smi;
 	$raw =~ s/\n\s*<token>(.*)<\/token>\n\s*/\1/gmi;
 	$raw =~ s/>([^><]+)<no_space_after>1<\/no_space_after>\n\s*<\/w>\n\s*<w / glue="1">\1<\/tok><w /gmi;
 	$raw =~ s/<w id=/<tok pdtid=/g;
@@ -88,6 +89,7 @@ if ( !$doc ) {
 	
 # treat m
 	if ( -e $tmp.".m" ) {
+		if ( $debug ) { print "Found m-layer:  $tmp.m"; };
 		open FILE, $tmp.".m";
 		$xml = <FILE>;
 		close FILE;
@@ -97,6 +99,7 @@ if ( !$doc ) {
 	
 # treat a
 	if ( -e $tmp.".a" ) {
+		if ( $debug ) { print "Found m-layer:  $tmp.a"; };
 		open FILE, $tmp.".a";
 		$xml = <FILE>;
 		close FILE;
@@ -106,6 +109,7 @@ if ( !$doc ) {
 	
 # treat t
 	if ( -e $tmp.".t" ) {
+		if ( $debug ) { print "Found t-layer:  $tmp.t"; };
 		open FILE, $tmp.".t";
 		$xml = <FILE>;
 		close FILE;
