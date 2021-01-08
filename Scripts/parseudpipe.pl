@@ -26,6 +26,7 @@ GetOptions ( ## Command line options
             'atts=s' => \$atts, # attributes to use for the word form
             'forms=s' => \$atts, # attribute for the normalized form
             'mode=s' => \$mode, # how to run UDPIPE (server or local - when /usr/local/bin/udpipe)
+            'force' => \$force, # run without checks
             );
 
 $\ = "\n"; $, = "\t";
@@ -57,7 +58,7 @@ if ( !$model ) {
 		if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
 		print "Choosing $model for $lang";
 	};
-} elsif ( !$models{$model} ) { print "No such UDPIPE model: $model"; exit;  };
+} elsif ( !$models{$model} && !$force ) { print "No such UDPIPE model: $model"; exit;  };
 
 print "Using model: $model";
 
