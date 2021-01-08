@@ -260,8 +260,30 @@ if ( $tdoc ) {
 					( $vallex = $tmp2[0]->textContent ) =~ s/^v#//;
 					$tok->setAttribute('vallex', $vallex);
 				};
+				@tmp2 = $tnode->findnodes("../../\@id");
+				if ( @tmp2 ) {
+					$pdttheadid = $tmp2[0]->value;
+					if ( $debug ) {  print "- (head) $parid, $deprel"; };
+					$tok->setAttribute('pdtthead', $pdttheadid);
+				} else { print "No t-head: $pdtid / $aid"; exit; };
 				if ( $debug ) { print "T Level: $tfa, $sempos, $vallex".$tok->toString; };
 			};
+		};
+	};
+
+	# Number the heads	
+	foreach $tok ( $doc->findnodes("//tok[not(dtok)] | //dtok") ) {
+		$pdtheadid = $tok->getAttribute('pdtthead');
+		if ( $pdtheadid ) {
+			if ( $debug ) { print $tok->getAttribute('id'), $pdtheadid, $a2m{$pdtheadid}, $m2w{$a2m{$pdtheadid}}, $w2tei{$m2w{$a2m{$pdtheadid}}};		 };
+			$headid = $w2tei{$m2w{$a2m{$t2a{$pdtheadid}}}};
+			if ( $headid ne '' ) {
+				$tok->setAttribute('thead', $headid);		
+			} elsif ( $pdtheadid =~ /w\d+/ ) {
+				print "No head found: $pdtheadid = ".$t2a{$pdtheadid}." < ".$a2m{$pdtheadid}." < ".$m2w{$a2m{$pdtheadid}};
+			};
+		} else {
+			print "No pdtheadid: ".$tok->toString;
 		};
 	};
 };

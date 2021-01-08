@@ -15,7 +15,7 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'writeback' => \$writeback, # write back to original file or put in new file
-            'file=s' => \$file, # which UDPIPE model to use
+            'file=s' => \$file, # file to tag
             'model=s' => \$model, # which UDPIPE model to use
             'lang=s' => \$lang, # language of the texts (if no model is provided)
             'folder=s' => \$folder, # Originals folder
@@ -25,6 +25,7 @@ GetOptions ( ## Command line options
             'sentxp=s' => \$sentxp, # sentence XPath
             'atts=s' => \$atts, # attributes to use for the word form
             'forms=s' => \$atts, # attribute for the normalized form
+            'mode=s' => \$mode, # how to run UDPIPE (server or local - when /usr/local/bin/udpipe)
             );
 
 $\ = "\n"; $, = "\t";
@@ -36,6 +37,7 @@ if ( !$token ) { $token = "tok"; };
 if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
 
 if ( !$file ) { $file = shift; };
+if ( !$mode ) { $mode = "local"; };
 
 ( $tmp = $0 ) =~ s/Scripts.*/Resources\/udpipe-models.txt/;
 open FILE, $tmp; %udm = ();
@@ -239,7 +241,7 @@ sub detectlang ( $text ) {
 sub runudpipe ( $raw, $model, $udfile ) {
 	($raw, $model) = @_;
 
-	if ( -e "/usr/local/bin/udpipe" ) {
+	if ( -e "/usr/local/bin/udpipe" && $mode ne 'server' ) {
 		
 		( $modelroot = $scriptname ) =~ s/\/[^\/]+$//;
 		if ( -e "$modelroot/$model" ) {
