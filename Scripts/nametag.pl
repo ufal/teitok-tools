@@ -55,6 +55,7 @@ if ( !$model && $lang ) { $model = $ntmodels{$lang}; };
 if ( !$model ) { print "No model found - $model / $lang / $langxp"; };
 
 $url = "http://lindat.mff.cuni.cz/services/nametag/api/recognize?output=xml&input=vertical&model=$model&data=".uri_escape_utf8($data);
+if ( $debug ) { print $url; };
 $result = get($url);
 $json = JSON->new->allow_nonref;
 $jf = $json->decode($result);
