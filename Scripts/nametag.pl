@@ -51,7 +51,7 @@ if ( !$lang && $langxp ) {
 		};
 	};
 };
-if ( !$model && $lang ) { $model = $ntmodls{$lang}; };
+if ( !$model && $lang ) { $model = $ntmodels{$lang}; };
 if ( !$model ) { print "No model found - $model / $lang / $langxp"; };
 
 $url = "http://lindat.mff.cuni.cz/services/nametag/api/recognize?output=xml&input=vertical&model=$model&data=".uri_escape_utf8($data);
