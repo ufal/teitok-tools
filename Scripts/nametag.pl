@@ -17,12 +17,14 @@ GetOptions ( ## Command line options
 
 $\ = "\n"; $, = "\t";
 
+if ( !$filename ) { $filename = shift; };
+
 $parser = XML::LibXML->new(); $doc = "";
 eval {
 	$doc = $parser->load_xml(location => $filename );
 };
 
-if (  $doc->findnodes("//name") && !$force ) {
+if (  $doc->findnodes("//text//name") && !$force ) {
 	print "Already named"; exit;
 };
 
