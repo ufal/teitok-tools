@@ -127,6 +127,8 @@ sub treatfile ( $fn ) {
 				$toklist .= "# sent_id $sentid\n";
 				foreach $tok ( $snt->findnodes(".//$token") ) {
 					$tokxml = parsetok($tok);
+					$tokid = $tok->getAttribute('id').'';
+					$tokhash{$tokid} = $tok;
 					$toklist .= $tokxml;
 					@tmp = split("\t", $tokxml); 
 					$rawtxt .= $tmp[1]." ";
@@ -141,6 +143,8 @@ sub treatfile ( $fn ) {
 				if ( $newsent ) { $toklist .= "# sent_id s-".$snum++."\n"; };
 				$newsent = 0;
 				$tokxml = parsetok($tok); 
+				$tokid = $tok->getAttribute('id').'';
+				$tokhash{$tokid} = $tok;
 				$toklist .= $tokxml;
 				@tmp = split("\t", $tokxml); 
 				$rawtxt .= $tmp[1]." ";
@@ -358,8 +362,7 @@ sub putbacksent($sent, $tok) {
 			# Add a dtok
 		} else {	
 			$tokid = $misc; 
-			$tmp = "//".$token."[\@id=\"$tokid\"]";
-			$tok = $xml->findnodes($tmp)->item(0);
+			$tok = $tokhash{$tokid}; # Read from hash
 			if ( $i ) { $tok->setAttribute('ord', $i); };
 			if ( $lemma ) { $tok->setAttribute('lemma', $lemma); };
 			if ( $upos ) { $tok->setAttribute('upos', $upos); };
@@ -368,6 +371,7 @@ sub putbacksent($sent, $tok) {
 			if ( $head ) { $tok->setAttribute('head', $tokid{$head}); };
 			if ( $deprel ) { $tok->setAttribute('deprel', $deprel); };
 			if ( $deps ) { $tok->setAttribute('deps', $deps); };
+			if ( $debug ) { print $tokid, $tok->toString; };
 		};
 	}; 
 	 
