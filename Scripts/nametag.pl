@@ -1,4 +1,5 @@
 use LWP::Simple;
+use LWP::UserAgent;
 use Getopt::Long;
 use XML::LibXML;
 use URI::Escape;
@@ -19,6 +20,8 @@ $\ = "\n"; $, = "\t";
 
 if ( !$filename ) { $filename = shift; };
 
+$ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
+
 $parser = XML::LibXML->new(); $doc = "";
 eval {
 	$doc = $parser->load_xml(location => $filename );
@@ -30,6 +33,7 @@ if (  $doc->findnodes("//text//name") && !$force ) {
 
 foreach $tok ( $doc->findnodes("//tok") ) {
 	$data .= $tok->textContent."\n";
+	$cnt++;
 };
 
 %ntmodels = (
@@ -52,16 +56,40 @@ if ( !$lang && $langxp ) {
 	};
 };
 if ( !$model && $lang ) { $model = $ntmodels{$lang}; };
-if ( !$model ) { print "No model found - $model / $lang / $langxp"; };
+if ( !$model ) { print "No model found - $model / $lang / $langxp"; exit; };
 
-$url = "http://lindat.mff.cuni.cz/services/nametag/api/recognize?output=xml&input=vertical&model=$model&data=".uri_escape_utf8($data);
+#$url = "http://lindat.mff.cuni.cz/services/nametag/api/recognize?output=xml&input=vertical&model=$model&data=".uri_escape_utf8($data);
 if ( $debug ) { print $url; };
-$result = get($url);
-$json = JSON->new->allow_nonref;
-$jf = $json->decode($result);
 
+%form = (
+	"data" => $data,
+	"model" => $model
+);
+
+
+$url = 'http://lindat.mff.cuni.cz/services/nametag/api/recognize';
+
+if ( $debug ) { print "Submitting $cnt tokens to $url"};
+
+$res = $ua->post( $url, \%form );
+$jsdat = $res->decoded_content;
 eval {
-	$outdoc = $parser->load_xml(string => $jf->{'result'});
+	$jsonkont = decode_json($jsdat);
+};
+if ( !$jsonkont ) {
+	print "Error: failed to get parsed result from server";
+	print $res->message();
+	exit;
+};
+$jf = "<doc>".$jsonkont->{'result'}."</doc>";
+$jf =~ s/\\n/\n/g;
+if ( $debug ) { print $jf; };
+eval {
+	$outdoc = $parser->load_xml(string => $jf);
+};
+if ( !$outdoc ) {
+	print "Unable to parse result";
+	exit;
 };
 
 foreach $outtok ( $outdoc->findnodes("//token") ) {
