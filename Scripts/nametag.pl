@@ -6,6 +6,8 @@ use URI::Escape;
 use JSON;
 use POSIX qw(strftime);
 
+binmode(STDOUT, ":utf8");
+
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
@@ -26,22 +28,26 @@ $parser = XML::LibXML->new(); $doc = "";
 eval {
 	$doc = $parser->load_xml(location => $filename );
 };
+if ( !$doc ) { print "Failed to load XML in $filename"; exit; };
 
 if (  $doc->findnodes("//text//name") && !$force ) {
 	print "Already named"; exit;
 };
 
 foreach $tok ( $doc->findnodes("//tok") ) {
-	$data .= $tok->textContent."\n";
-	$cnt++;
+	$toktxt = $tok->textContent;
+	if ( $toktxt ) { 
+		$data .= $toktxt."\n"; 
+		$cnt++;
+	};
 };
 
 %ntmodels = (
 	"ces" => "czech-cnec2.0-200831",
-	"nld" => "dutch-cnec2.0-200831",
-	"eng" => "english-cnec2.0-200831",
-	"spa" => "spanish-cnec2.0-200831",
-	"deu" => "german-cnec2.0-200831",
+	"nld" => "dutch-conll-200831",
+	"eng" => "english-conll-200831",
+	"spa" => "spanish-conll-200831",
+	"deu" => "german-conll-200831",
 );
 
 if ( !$lang && $langxp ) { 
@@ -61,15 +67,17 @@ if ( !$model ) { print "No model found - $model / $lang / $langxp"; exit; };
 #$url = "http://lindat.mff.cuni.cz/services/nametag/api/recognize?output=xml&input=vertical&model=$model&data=".uri_escape_utf8($data);
 if ( $debug ) { print $url; };
 
+utf8::upgrade($data);
+
 %form = (
 	"data" => $data,
 	"model" => $model
 );
 
-
+if ( $debug ) { print $data; };
 $url = 'http://lindat.mff.cuni.cz/services/nametag/api/recognize';
 
-if ( $debug || $verbose ) { print "Submitting $cnt tokens to $url"};
+if ( $debug || $verbose ) { print "Submitting $cnt tokens to $url / model $model"};
 
 $res = $ua->post( $url, \%form );
 $jsdat = $res->decoded_content;
