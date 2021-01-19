@@ -69,7 +69,7 @@ if ( $debug ) { print $url; };
 
 $url = 'http://lindat.mff.cuni.cz/services/nametag/api/recognize';
 
-if ( $debug ) { print "Submitting $cnt tokens to $url"};
+if ( $debug || $verbose ) { print "Submitting $cnt tokens to $url"};
 
 $res = $ua->post( $url, \%form );
 $jsdat = $res->decoded_content;

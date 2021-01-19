@@ -153,6 +153,8 @@ sub treatfile ( $fn ) {
 			};
 		};
 		utf8::upgrade($toklist);
+		
+		if ( $debug ) { print "$cnt tokens to be submitted to UDPIPE"; };
 
 	
 		if ( !$model ) {
@@ -285,6 +287,8 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		binmode (FILE, ":utf8");
 		print FILE $jsonkont->{'result'};
 		close FILE;
+		
+		if ( $debug ) { print `wc $udfile`; };
 	
 	};
 	
@@ -296,6 +300,7 @@ sub parseconllu($fn) {
 	$linex = ""; 
 
 	$/ = "\n";
+	if ( $debug ) { print "reading back $fn"; };
 	open FILE, $fn; $insent = 0; $inpar = 0; $indoc = 0; $doccnt =1;
 	while ( <FILE> ) {	
 		$line = $_; chop($line);
@@ -318,6 +323,7 @@ sub parseconllu($fn) {
 			print "What? ($line)"; 
 		};
 	};
+	if ( $debug ) { print "done reading back CoNLL-U output"; };
 	if ( keys %sent ) { $linex .= putbacksent(%sent, %tok); }; # Add the last sentence if needed
 
 	return "";
