@@ -10,6 +10,7 @@ GetOptions ( ## Command line options
 	'test' => \$test, # tokenize to string, do not change the database
 	'file=s' => \$filename, # input file
 	'output=s' => \$output, # output file
+	'encoding=s' => \$encoding, # output file
 	'morerev=s' => \$morerev, # language of input
 	'nospace' => \$nospace, # convert to whitespace-sensitive XML
 	);
@@ -23,6 +24,7 @@ if ( !$output ) { $output = $basename.".xml"; };
 	
 	$/ = undef;
 	open FILE, $filename;
+	if ( $encoding ) { binmode(FILE, ":$encoding"); };
 	$raw = <FILE>;
 	close FILE;
 	
@@ -77,6 +79,10 @@ foreach $episode ( $doc->findnodes("//Episode") ) {
 			$u->setAttribute("start", $start);
 			$end = $turn->getAttribute("endTime");
 			$u->setAttribute("end", $end);
+			$tmp = $turn->getAttribute("speaker");
+			if ( $tmp ) { $u->setAttribute("who", $tmp); };
+			$tmp = $turn->getAttribute("mode");
+			if ( $tmp ) { $u->setAttribute("mode", $tmp); };
 			$ug->addChild($u);
 			foreach $node ( $turn->childNodes ) {
 				if ( $node->nodeType == 1 ) {
@@ -87,7 +93,7 @@ foreach $episode ( $doc->findnodes("//Episode") ) {
 					$tok->setAttribute("start", $time);
 				} elsif ( $node->nodeType == 3 ) {
 					if ( $tok ) {
-						( $form = $node->textContent ) =~ s/\s*(.*?)\s*/\1/gsmi;
+						( $form = $node->textContent ) =~ s/^\s*(.*?)\s*$/\1/gsmi;
 						$tok->appendText($form);
 					} else {
 						print "?? ".Dumper($node);

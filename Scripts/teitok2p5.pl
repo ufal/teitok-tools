@@ -233,7 +233,7 @@ $revnode->setAttribute("when", $when);
 $revnode->appendText("Converted from TEITOK file $basename.xml");
 
 # Deal with the namespace
-$doc->firstChild->setAttribute('xmlns', 'http://www.tei-c.org/ns/1.0');
+$doc->findnodes("/TEI")->item(0)->setAttribute('xmlns', 'http://www.tei-c.org/ns/1.0');
 
 if ( $writeback ) { 
 	$output = $filename;
