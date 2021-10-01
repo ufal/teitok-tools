@@ -14,6 +14,7 @@ $scriptname = $0;
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
+            'verbose' => \$verbose, # debugging mode
             'writeback' => \$writeback, # write back to original file or put in new file
             'output=s' => \$output, # which UDPIPE model to use
             'file=s' => \$filename, # which UDPIPE model to use
@@ -241,7 +242,7 @@ if ( $writeback ) {
 } elsif ( !$output ) {
 	( $output = $filename ) =~ s/\.([^.]+)$/-p5\.\1/;
 };
-print "Writing converted file to $output\n";
+if ( $verbose ) { print "Writing converted file to $output\n"; };
 open OUTFILE, ">$output";
 print OUTFILE $doc->toString;	
 close OUTFLE;
