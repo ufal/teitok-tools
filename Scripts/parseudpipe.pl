@@ -337,8 +337,9 @@ sub parseconllu($fn) {
 		if ( $line =~ /# ?([a-z0-9A-Z\[\]¹_-]+) ?=? (.*)/ ) {
 			$sent{$1} = $2;
 		} elsif ( $line =~ /^(\d+)\t(.*)/ ) {
+			$tmp = split ("\t", $line);
 			$tok{$1} = $2; $tokmax = $1; 
-			$tokid{$1} = $tokcnt++;	
+			$ord2id{$1} = $line[9];	
 		} elsif ( $line =~ /^(\d+)-(\d+)\t(.*)/ ) {
 			# To do : mtok / dtok	
 			$mtok{$1} = $3; $etok{$2} = $3; $mtoke{$1} = $2;
@@ -348,7 +349,7 @@ sub parseconllu($fn) {
 			# To do : ??	
 		} elsif ( $line eq '' ) {
 			putbacksent(%sent, %tok);
-			%tok = (); %mtok = ();  %etok = ();  %tokid = ();  %sent = ();
+			%tok = (); %mtok = ();  %etok = ();  %ord2id = ();  %sent = ();
 		} else {
 			print "What? ($line)"; 
 		};
@@ -374,14 +375,14 @@ sub putbacksent($sent, $tok) {
 	for ( $i=1; $i<=$tokmax; $i++ ) {
 		$tokline = textprotect($tok{$i});
 		( $word, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc ) = split("\t", $tokline ); 
-		if ( $head ) { $headf = $tokid{$head}; };
+		if ( $head ) { $headf = $ord2id{$head}; };
 		if ( $mtok{$i} ) { 
 			( $mword, $mlemma, $mupos, $mxpos, $mfeats, $mhead, $mdeprel, $mdeps, $mmisc ) = split("\t", $mtok{$i}); 
 			if ( $mword =~ / / ) {
 				# Multiword
 			} else {
 				# DToks
-				$dtokxml = "<tok id=\"w-".$tokid{$i}."\" ord=\"$i\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
+				$dtokxml = "<tok id=\"w-".$ord2id{$i}."\" ord=\"$i\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
 			};
 		}		
 		if ( $dtokxml ) {
@@ -394,7 +395,8 @@ sub putbacksent($sent, $tok) {
 			if ( $upos ) { $tok->setAttribute('upos', $upos); };
 			if ( $xpos ) { $tok->setAttribute('xpos', $xpos); };
 			if ( $feats ) { $tok->setAttribute('feats', $feats); };
-			if ( $head ) { $tok->setAttribute('head', $tokid{$head}); };
+			if ( $head ) { $tok->setAttribute('head', $ord2id{$head}); };
+			if ( $head ) { $tok->setAttribute('ohead', $head); };
 			if ( $deprel ) { $tok->setAttribute('deprel', $deprel); };
 			if ( $deps ) { $tok->setAttribute('deps', $deps); };
 			if ( $debug ) { print $tokid, $tok->toString; };
