@@ -226,9 +226,9 @@ sub parsetok ($tok) {
 	if ( !$form ) { $form = "_"; };	
 	
 	if ( $task eq 'parse' ) {
-		$lemma = $tok->getAttribute('lemma') or $lemma = "_";
-		$upos = $tok->getAttribute('upos') or $upos = "_";
-		$xpos = $tok->getAttribute('xpos') or $xpos = "_";
+		$lemma = $tok->getAttribute('lemma'); if ($lemma eq '') { $lemma = "_"; };
+		$upos = $tok->getAttribute('upos'); if ($upos eq '') {  $upos = "_"; };
+		$xpos = $tok->getAttribute('xpos'); if ($xpos eq '') {  $xpos = "_"; };
 	} else {
 		$lemma = $upos = $xpos = "_";
 	};
