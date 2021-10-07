@@ -27,7 +27,7 @@ GetOptions ( ## Command line options
             'forms=s' => \$atts, # attribute for the normalized form
             'mode=s' => \$mode, # how to run UDPIPE (server or local - when /usr/local/bin/udpipe)
             'force' => \$force, # run without checks
-            'mode' => \$mode, # run without parser
+            'task=s' => \$task, # run as tagger / parser
             );
 
 $\ = "\n"; $, = "\t";
@@ -249,10 +249,10 @@ sub detectlang ( $text ) {
 sub runudpipe ( $raw, $model, $udfile ) {
 	($raw, $model) = @_;
 
-	if ( $mode eq 'parse' ) { 
+	if ( $task eq 'parse' ) { 
 		$modes = "--parse";
 		$totag = 0; $toparse = 1;
-	} elsif ( $mode eq 'tag' ) {
+	} elsif ( $task eq 'tag' ) {
 		$modes = "--tag";
 		$totag = 1; $toparse = 0;
 	} else {
