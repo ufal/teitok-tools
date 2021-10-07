@@ -37,7 +37,7 @@ $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 $parser = XML::LibXML->new(); 
 
 if ( !$token ) { 
-	if ( $task eq 'parse' ) { $tokxp = "tok[not(dtok)] | //dtok"; } 
+	if ( $task eq 'parse' ) { $tokxp = "//tok[not(dtok)] | //dtok"; } 
 	$token = "tok"; 
 };
 if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
@@ -97,6 +97,7 @@ sub treatfile ( $fn ) {
 		
 		# read the XML
 		if ( !$tokxp ) { $tokxp = "//$token"; };
+		( $reltokxp = $tokxp ) =~ s/(^| )\/\//\1.\/\//g;
 		
 		if ( $rawxml !~ /<\/$token>/  ) {
 			print "Not tokenized - tokenizing";
@@ -130,7 +131,7 @@ sub treatfile ( $fn ) {
 				$sentid = $snt->getAttribute('id');
 				if ( !$sentid ) { $sentid = "s-".$sntcnt++; $snt->setAttribute('id', $sentid); };
 				$toklist .= "# sent_id $sentid\n";
-				foreach $tok ( $snt->findnodes(".//$token") ) {
+				foreach $tok ( $snt->findnodes($reltokxp) ) {
 					$tokxml = parsetok($tok);
 					$tokid = $tok->getAttribute('id').'';
 					$tokhash{$tokid} = $tok;
