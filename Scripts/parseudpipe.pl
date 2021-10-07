@@ -220,7 +220,16 @@ sub parsetok ($tok) {
 	};
 	if ( !$form ) { $form = $tok->textContent; };
 	if ( !$form ) { $form = "_"; };	
-	return "$num\t$form\t_\t_\t_\t_\t_\t_\t_\t$tokid\n"; $num++;
+	
+	if ( $task eq 'parse' ) {
+		$lemma = $tok->getAttribute('lemma') or $lemma = "_";
+		$upos = $tok->getAttribute('upos') or $upos = "_";
+		$xpos = $tok->getAttribute('xpos') or $xpos = "_";
+	} else {
+		$lemma = $upos = $xpos = "_";
+	};
+	
+	return "$num\t$form\tlemma\t$upos\t$xpos\t$feats\t_\t_\t_\t_\t$tokid\n"; $num++;
 };
 
 sub detectlang ( $text ) {
