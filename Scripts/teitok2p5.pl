@@ -41,13 +41,13 @@ foreach $tk ( $doc->findnodes("//text") ) {
 
 # Convert <dtok> to <tok> (to be dealt with later)
 foreach $tk ( $doc->findnodes("//text//tok[dtok]") ) {
-	$tk->setName('ab');
+	$tk->setName('w');
 	foreach $dtk ( $tk->findnodes("text()") ) {
 		$text = $dtk->textContent;
 		$tk->removeChild($dtk);
 	};
 	foreach $att ( $tk->attributes() ) {
-		$tk->removeAttribute($att);
+		$tk->removeAttribute($att->getName());
 	};
 	foreach $dtk ( $tk->findnodes("dtok") ) {
 		$dtk->setName('tok');
@@ -55,6 +55,9 @@ foreach $tk ( $doc->findnodes("//text//tok[dtok]") ) {
 		$txt = $doc->createTextNode( $form );
 		$form = $dtk->removeAttribute('form');
 		$dtk->addChild($txt);
+	};
+	if ( $tk->getAttribute('nform')) {
+	print $tk->toString; exit;
 	};
 };
 
@@ -97,6 +100,13 @@ foreach $bboxelm ( $doc->findnodes("//text//*[\@bbox]") ) {
 	
 	# Remove the bbox
 	$bboxelm->removeAttribute('bbox');
+};
+
+# Remove the @id from pb, lb
+foreach $node ( $doc->findnodes("//*[\@id]") ) {
+	$val = $node->getAttribute('id');
+	$node->removeAttribute('id');
+	$node->setAttribute('xml:id', $val);
 };
 
 # Convert <tok> to <w> and <pc>
@@ -235,6 +245,7 @@ $revnode->appendText("Converted from TEITOK file $basename.xml");
 
 # Deal with the namespace
 $doc->findnodes("/TEI")->item(0)->setAttribute('xmlns', 'http://www.tei-c.org/ns/1.0');
+$doc->findnodes("/TEI")->item(0)->removeAttribute('xmlnsoff');
 
 if ( $writeback ) { 
 	$output = $filename;
@@ -242,6 +253,12 @@ if ( $writeback ) {
 } elsif ( !$output ) {
 	( $output = $filename ) =~ s/\.([^.]+)$/-p5\.\1/;
 };
+$outputxml = $doc->toString;
+($tmp = $outputxml ) =~ s/tei\_//g;
+eval {
+	$tmp2 = $parser->load_xml(string => $tmp);
+};
+if ( $tmp2 ) { $doc = $tmp2; } elsif ($debug && $tmp ne $outputxml) { print "could not convert tei_"; };
 if ( $verbose ) { print "Writing converted file to $output\n"; };
 open OUTFILE, ">$output";
 print OUTFILE $doc->toString;	
