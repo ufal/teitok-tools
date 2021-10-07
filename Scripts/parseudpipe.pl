@@ -234,7 +234,7 @@ sub parsetok ($tok) {
 		$lemma = $upos = $xpos = "_";
 	};
 	
-	return "$num\t$form\t$lemma\t$upos\t$xpos\t$feats\t_\t_\t_\t_\t$tokid\n"; $num++;
+	return "$num\t$form\t$lemma\t$upos\t$xpos\t$feats\t_\t_\t_\t$tokid\n"; $num++;
 };
 
 sub detectlang ( $text ) {
