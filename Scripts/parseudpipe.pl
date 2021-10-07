@@ -278,7 +278,6 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		} else {
 			$modelfile = `locate $model`; chop($modelfile);
 		};
-		if ( !$modelfile ) { $modelfile = "--lang=$lang"; };
 
 		($tmpfile = $udfile) =~ s/\./-vrt./;
 		open FILE, ">$tmpfile";
@@ -287,7 +286,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		close FILE;
 		
 		print " - Writing VRT file to $tmpfile";
-		$cmd = "/usr/local/bin/udpipe $modes --input=conllu --outfile='$udfile' $modelfile $tmpfile";
+		$cmd = "/usr/local/bin/udpipe $modes --input=conllu --outfile='$udfile' $model $tmpfile";
 		print " - Parsing with UDPIPE / $model to $udfile";
 		print $cmd;
 		`$cmd`;
