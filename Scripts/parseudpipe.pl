@@ -337,9 +337,9 @@ sub parseconllu($fn) {
 		if ( $line =~ /# ?([a-z0-9A-Z\[\]¹_-]+) ?=? (.*)/ ) {
 			$sent{$1} = $2;
 		} elsif ( $line =~ /^(\d+)\t(.*)/ ) {
-			$tmp = split ("\t", $line);
+			@tmp = split ("\t", $line);
 			$tok{$1} = $2; $tokmax = $1; 
-			( $ord2id{$1} = $tmp[9] ) =~ s/[\n\r]+//g;	
+			( $ord2id{$tmp[0]} = $tmp[9] ) =~ s/[\n\r]+//g;	
 		} elsif ( $line =~ /^(\d+)-(\d+)\t(.*)/ ) {
 			# To do : mtok / dtok	
 			$mtok{$1} = $3; $etok{$2} = $3; $mtoke{$1} = $2;
