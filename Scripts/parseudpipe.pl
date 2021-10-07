@@ -28,6 +28,7 @@ GetOptions ( ## Command line options
             'mode=s' => \$mode, # how to run UDPIPE (server or local - when /usr/local/bin/udpipe)
             'force' => \$force, # run without checks
             'task=s' => \$task, # run as tagger / parser
+            'modelroot=s' => \$modelroot, # folder where the models are
             );
 
 $\ = "\n"; $, = "\t";
@@ -271,7 +272,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 
 	if ( -e "/usr/local/bin/udpipe" && $mode ne 'server' ) {
 		
-		( $modelroot = $scriptname ) =~ s/\/[^\/]+$//;
+		if ( !$modelroot ) { ( $modelroot = $scriptname ) =~ s/\/[^\/]+$//; };
 		if ( -e "$modelroot/$model" ) {
 			$modelfile = "$modelroot/$model";
 		} else {
