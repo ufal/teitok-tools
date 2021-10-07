@@ -36,7 +36,10 @@ $\ = "\n"; $, = "\t";
 $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 $parser = XML::LibXML->new(); 
 
-if ( !$token ) { $token = "tok"; };
+if ( !$token ) { 
+	if ( $task eq 'parse' ) { $token = "tok[not(dtok)] | //dtok"; } 
+	else { $token = "tok"; };
+};
 if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
 
 if ( !$file ) { $file = shift; };
