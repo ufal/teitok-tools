@@ -37,8 +37,8 @@ $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 $parser = XML::LibXML->new(); 
 
 if ( !$token ) { 
-	if ( $task eq 'parse' ) { $token = "tok[not(dtok)] | //dtok"; } 
-	else { $token = "tok"; };
+	if ( $task eq 'parse' ) { $tokxp = "tok[not(dtok)] | //dtok"; } 
+	$token = "tok"; 
 };
 if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
 
