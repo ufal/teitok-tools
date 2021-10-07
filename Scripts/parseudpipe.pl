@@ -277,6 +277,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		} else {
 			$modelfile = `locate $model`; chop($modelfile);
 		};
+		if ( !$modelfile ) { $modelfile = "--lang=$lang"; };
 
 		($tmpfile = $udfile) =~ s/\./-vrt./;
 		open FILE, ">$tmpfile";
