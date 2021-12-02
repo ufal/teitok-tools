@@ -7,7 +7,7 @@ use LWP::UserAgent;
 use JSON;
 use XML::LibXML;
 
-# Convert a Manatee corpus into a TEITOK corpus (to have it convert back to Manatee)
+# Convert a UDPIPE corpus into a TEITOK corpus (to have it convert back to Manatee)
 
 $scriptname = $0;
 

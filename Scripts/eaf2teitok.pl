@@ -82,14 +82,14 @@ foreach $tier ( $eaf->findnodes("//TIER") ) {
 		$anns{$annid}{'who'} = $who;	
 		$anns{$annid}{'end'} = $end;	
 		$anns{$annid}{'text'} = $txt;
-		print "$annid: $start-$end = $txt";
+		if ( $debug ) { print "$annid: $start-$end = $txt"; };
 	};
 	foreach $annotation ( $tier->findnodes("./ANNOTATION/REF_ANNOTATION") ) {
 		$annid = $annotation->getAttribute("ANNOTATION_ID")."";	
 		$annref = $annotation->getAttribute("ANNOTATION_REF")."";	
 		$txt = $annotation->findnodes("./ANNOTATION_VALUE")->item(0)->textContent;
 		$anns{$annref}{'refs'}{$annname} = $txt;	
-		print "$annref: $annname = $txt";
+		if ( $debug ) { print "$annref: $annname = $txt"; };
 	};
 };
 
@@ -107,7 +107,7 @@ foreach my $key (sort {$a <=> $b} keys %utts) {
 		$text->appendText("\n");
 		
 		while ( ( $key2, $val2) = each ( %{$ann->{'refs'}} ) ) {
-			print "REF $key2 = $val2";
+			if ( $debug ) { print "REF $key2 = $val2"; };
 			$utt->setAttribute("$key2", $val2);
 		};
 	};
@@ -178,7 +178,7 @@ sub makenode ( $xml, $xquery ) {
 			};
 			
 		} else {
-			print "Failed to find or create node: $xquery";
+			warn "Failed to find or create node: $xquery";
 		};
 	};
 };
