@@ -52,8 +52,9 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 	$fnr++; $facsid= "facs-".$fnr;
 	$enr++; $pageid= "e-".$enr;
 	$imageurl = $page->getAttribute('imageFilename');
+	if ( !$nofolders ) { $imageurl = "$basename/$imageurl"; };
 	$facstext .= "  <surface id=\"$facsid\">";
-	$text .= "\n<pb id=\"$pageid\" corresp=\"#$facsid\" facs=\"$baseid/$imageurl\"/>";
+	$text .= "\n<pb id=\"$pageid\" corresp=\"#$facsid\" facs=\"$imageurl\"/>";
 	$anr = 0; 
 	foreach $area ( $page->findnodes("./TextRegion") ) {
 		$points = ""; $bbox = "";
@@ -94,15 +95,19 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 					$tmp = $word->findnodes("./TextEquiv/Unicode");
 					$toktext = ""; if ( $tmp ) { $toktext = $tmp->item(0)->textContent; };
 					$toktext =~ s/^\s+|\s+$//gsmi;
-					$punctoks = "";
+					$aftpunc = ""; $befpunc = "";
 					if ( !$nopunct ) {
 						while ( $toktext =~ /(.*)(\p{P})$/ ) {
 							$wnr++; $ptokid= "w-$fnr.$lnr.$wnr";
-							$toktext = $1; $punctoks .= "<tok id=\"$ptokid\">$2</tok>";
+							$toktext = $1; $aftpunc .= "<tok id=\"$ptokid\">$2</tok>";
+						};
+						while ( $toktext =~ /^(\p{P})(.*)/ ) {
+							$wnr++; $ptokid= "w-$fnr.$lnr.$wnr";
+							$toktext = $1; $befpunc .= "<tok id=\"$ptokid\">$2</tok>";
 						};
 					};
 					$facstext .= "\n\t<zone id=\"$facsid4\" points=\"$points\"/>";
-					$text .= "\n  <tok id=\"$tokid\" corresp=\"#$facsid4\" bbox=\"$bbox\">$toktext</tok>$punctoks";
+					$text .= "\n  $befpunc<tok id=\"$tokid\" corresp=\"#$facsid4\" bbox=\"$bbox\">$toktext</tok>$aftpunc";
 				};
 			} else {
 				$text .= " ".$linetext;
