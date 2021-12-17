@@ -103,7 +103,7 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 						};
 						while ( $toktext =~ /^(\p{P})(.*)/ ) {
 							$wnr++; $ptokid= "w-$fnr.$lnr.$wnr";
-							$toktext = $1; $befpunc .= "<tok id=\"$ptokid\">$2</tok>";
+							$toktext = $2; $befpunc .= "<tok id=\"$ptokid\">$1</tok>";
 						};
 					};
 					$facstext .= "\n\t<zone id=\"$facsid4\" points=\"$points\"/>";
