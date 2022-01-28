@@ -37,7 +37,16 @@ $parser = XML::LibXML->new(); $doc = "";
 eval {
 	$doc = $parser->load_xml(string => $raw);
 };
-if ( !$doc ) { print "Invalid XML in $filename"; exit; };
+if ( !$doc ) { 
+	print "Invalid XML in $filename"; 
+	if ( $debug ) {
+		print $@;
+	};
+	if ( $debug > 2 ) {
+		print $raw;
+	};
+	exit; 
+};
 
 foreach $tk ( $doc->findnodes("//text") ) {
 	$tk->removeAttribute('xml:space');
