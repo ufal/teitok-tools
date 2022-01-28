@@ -12,11 +12,13 @@ binmode(STDOUT, ":utf8");
 
  GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
+            'test' => \$test, # test mode (do not save)
             'file=s' => \$filename, # filename
             'morerev=s' => \$morerev, # add additional revisionStmt
             'output=s' => \$output, # output file
             'strippath' => \$strippath, # strip path from facs name
             'nopunct' => \$nopunct, # do not split off punctuation marks
+            'noretoken' => \$noretoken, # do not merge across linebreaks
             );
 
 if ( !$filename ) { $filename = shift; };
@@ -96,7 +98,8 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 					$toktext = ""; if ( $tmp ) { $toktext = $tmp->item(0)->textContent; };
 					$toktext =~ s/^\s+|\s+$//gsmi;
 					$aftpunc = ""; $befpunc = "";
-					if ( !$nopunct ) {
+					if ( !$nopunct && $toktext !~ /^[A-Z](\p{P})$/ ) {
+						# Move on-boundary punctuation marks out of the token
 						while ( $toktext =~ /(.*)(\p{P})$/ ) {
 							$wnr++; $ptokid= "w-$fnr.$lnr.$wnr";
 							$toktext = $1; $aftpunc .= "<tok id=\"$ptokid\">$2</tok>";
@@ -118,11 +121,16 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 	$facstext .= "\n  </surface>";
 };
 
+if ( !$noretoken ) {
+	# change <tok>trun-</tok> <lb/> <tok>cation</tok> to <tok>trun-<lb/>cation</tok>
+	$text =~ s/<tok([^<>]*)>([^<>]+)<\/tok><tok[^<>]*>-<\/tok>\s*(<lb[^<>]*\/>)\s*<tok([^<>]*)>([^<>]+)<\/tok>/<tok form="\2\5"><gtok\1>\2<\/gtok>\3<gtok\4>\5<\/gtok><\/tok>/gxmi;
+};
+
 $when = strftime "%Y-%m-%d", localtime;
 $teixml = "<TEI>
 <teiHeader>
 	<revisionDesc>
-		<change when=\"$when\" who=\"pagesteitok\">Converted from PageXML file $basename.xml</change>
+		<change when=\"$when\" who=\"pages2teitok\">Converted from PageXML file $basename.xml</change>
 	</revisionDesc>
 </teiHeader>
 <facsimile>
@@ -132,9 +140,14 @@ $facstext
 </text>
 </TEI>";
 
+$check = $parser->load_xml(string => $teixml, {  load_ext_dtd => 0 });
+if ( !$check ) { print "Oops - turned into invalid XML"; exit; };
 
-$test = $parser->load_xml(string => $teixml, {  load_ext_dtd => 0 });
-if ( !$test ) { print "Oops - turned into invalid XML"; exit; };
+if ( $test ) {
+	print "Conversion completed"; 
+	print $teixml;
+	exit;
+};
 
 open FILE, ">$output";
 print "Writing output to $output";
