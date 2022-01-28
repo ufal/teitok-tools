@@ -135,7 +135,11 @@ foreach $zone ( @{$tmp} ) {
 
 if ( $writeback ) { 
 	$output = $filename;
-	`mv $orgfile $orgfile.teitok`;
+	$buname = $filename; 
+	$buname =~ s/.*\///;
+	if ( -d "backups" ) { $buname = "backups/$buname"; } else { $buname =~ s/\.([^.]+)$/-bu.$1/; };
+	print "Original moved to $buname";
+	`mv $filename $buname`;
 } elsif ( !$output ) {
 	( $output = $filename ) =~ s/\.([^.]+)$/-p5\.\1/;
 };
