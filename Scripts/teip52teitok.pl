@@ -24,6 +24,10 @@ $\ = "\n"; $, = "\t";
 
 if ( !$filename ) { $filename = shift; };
 
+if ( !-e $filename ) { 
+	print "No such file: $filename"; 
+};
+
 $/ = undef;
 open FILE, $filename;
 binmode (FILE, ":utf8");
