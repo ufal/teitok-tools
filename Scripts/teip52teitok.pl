@@ -34,8 +34,11 @@ binmode (FILE, ":utf8");
 $raw = <FILE>;
 close FILE;
 
-$raw =~ s/xmlns/xmlnsoff/g;
+$raw =~ s/xmlns:/xmlnsoff_/g;
+$raw =~ s/xmlns=/xmlnsoff=/g;
 $raw =~ s/xml:id=/id=/g;
+$raw =~ s/<tei:/</g;
+$raw =~ s/<\/tei:/<\//g;
 
 $parser = XML::LibXML->new(); $doc = "";
 eval {
@@ -59,11 +62,12 @@ foreach $tk ( $doc->findnodes("//text") ) {
 @tokatts = ('xml:id', 'lemma', 'msd', 'pos');
 
 # Convert w to tok
-$tmp = $doc->findnodes("//text//w or //text//pc");
-if ( $tmp ) { print "Converting zones to @bbox"; };
-foreach $zone ( @{$tmp} ) {
+$tmp = $doc->findnodes("//text//w | //text//pc");
+if ( $tmp ) { print "Converting w and pc to tok"; };
+foreach $tk ( @{$tmp} ) {
+	$ttype = $tk->getName();
 	$tk->setName('tok');
-	$tk->setAttribute('type', $tk->getName());
+	$tk->setAttribute('type', $ttype);
 };
 
 # Convert <surface> elements to bbox
