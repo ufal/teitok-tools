@@ -128,7 +128,7 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 
 if ( !$noretoken ) {
 	# change <tok>trun-</tok> <lb/> <tok>cation</tok> to <tok>trun-<lb/>cation</tok>
-	$text =~ s/<tok([^<>]*)>([^<>]+)<\/tok><tok[^<>]*>-<\/tok>\s*(<lb[^<>]*\/>)\s*<tok([^<>]*)>([^<>]+)<\/tok>/<tok form="\2\5"><gtok\1>\2<\/gtok>\3<gtok\4>\5<\/gtok><\/tok>/gxmi;
+	$text =~ s/<tok([^<>]*)>([^<>]+)<\/tok><tok[^<>]*>-<\/tok>\s*(<lb[^<>]*\/>)\s*<tok([^<>]*)>([^<>]+)<\/tok>/<tok form="\2\5"><gtok\1>\2-<\/gtok>\3<gtok\4>\5<\/gtok><\/tok>/gxmi;
 };
 
 $when = strftime "%Y-%m-%d", localtime;
