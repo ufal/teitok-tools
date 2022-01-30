@@ -49,6 +49,11 @@ if ( !$input ) {
 	exit;
 };
 
+if ( !$input->findnodes("/PcGts") ) {
+	print "Not a PageXML file! $filename";
+	exit;
+};
+
 $fnr = 0; $enr = 0; 
 foreach $page ( $input->findnodes("/PcGts/Page") ) {
 	$fnr++; $facsid= "facs-".$fnr;
@@ -67,7 +72,7 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 		};	
 		$anr++; $facsid2 = "facs-$fnr.a$anr";
 		$enr++; $divid= "e-".$enr;
-		$facstext .= "\n\t<zone id=\"$facsid2\" points=\"$points\"/>";
+		$facstext .= "\n\t<zone id=\"$facsid2\" rendition=\"TextRegion\" points=\"$points\"/>";
 		$text .= "\n<div id=\"$divid\" corresp=\"#$facsid2\" bbox=\"$bbox\">";
 		foreach $line ( $area->findnodes("./TextLine") ) {
 			$points = ""; $bbox = ""; $plnr = 0;
@@ -78,7 +83,7 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 			};	
 			$lnr++; $facsid3 = "facs-$fnr.l$lnr";
 			$lbid= "lb-$fnr.$lnr";
-			$facstext .= "\n\t<zone id=\"$facsid3\" points=\"$points\"/>";
+			$facstext .= "\n\t<zone id=\"$facsid3\" rendition=\"Line\" points=\"$points\"/>";
 			$text .= "\n<lb id=\"$lbid\" corresp=\"#$facsid3\" bbox=\"$bbox\"/>";
 			$tmp = $line->findnodes("./TextEquiv/Unicode");
 			$linetext = ""; if ( $tmp ) { $linetext = $tmp->item(0)->textContent; };
@@ -109,7 +114,7 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 							$toktext = $2; $befpunc .= "<tok id=\"$ptokid\">$1</tok>";
 						};
 					};
-					$facstext .= "\n\t<zone id=\"$facsid4\" points=\"$points\"/>";
+					$facstext .= "\n\t<zone id=\"$facsid4\" rendition=\"Word\" points=\"$points\"/>";
 					$text .= "\n  $befpunc<tok id=\"$tokid\" corresp=\"#$facsid4\" bbox=\"$bbox\">$toktext</tok>$aftpunc";
 				};
 			} else {
