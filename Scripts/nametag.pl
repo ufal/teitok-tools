@@ -115,12 +115,16 @@ foreach $ne ( $outdoc->findnodes("//ne") ) {
 	if ( $debug ) { print join(";", @idlist); };
 	$t1 = $idlist[0]; $tx = $idlist[-1];
 	$tok1 = $doc->findnodes("//tok[\@id=\"$t1\"]")->item(0);
-	if ( $debug ) { print $tok1->toString; };
+	if ( $debug && $tok1 ) { print $tok1->toString; };
 	
 	$newne = $doc->createElement('name');
 	$newne->setAttribute('type', $ne->getAttribute('type'));
 	if ( $debug ) {  $newne->setAttribute('ids', join(";", @idlist)); };
-	$tok1->parentNode->insertBefore($newne, $tok1);
+	if ( $tok1 ) { 
+		$tok1->parentNode->insertBefore($newne, $tok1);
+	} else {
+		print "No parent node for $t1";
+	};
 	
 	while ( $sib = $newne->nextSibling() ) {
 		$newne->addChild($sib);
