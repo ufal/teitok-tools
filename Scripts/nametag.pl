@@ -12,6 +12,7 @@ GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
             'force' => \$force, # tokenize to string, do not change the database
+            'nocorresp' => \$nocorresp, # do not place a @corresp on the names
             'model=s' => \$model, # language of input
             'lang=s' => \$lang, # language of input
             'langxp=s' => \$langxp, # language of input
@@ -36,9 +37,11 @@ if (  $doc->findnodes("//text//name") && !$force ) {
 
 foreach $tok ( $doc->findnodes("//tok") ) {
 	$toktxt = $tok->textContent;
+	$tokid = $tok->getAttribute('id');
 	if ( $toktxt ) { 
-		$data .= $toktxt."\n"; 
+		$vert .= $toktxt."\n"; 
 		$cnt++;
+		$conllu .= $cnt."\t$toktxt\t_\t_\t_\t_\t_\t_\t_\t$tokid\n"; 
 	};
 };
 
@@ -70,8 +73,10 @@ if ( $debug ) { print $url; };
 utf8::upgrade($data);
 
 %form = (
-	"data" => $data,
-	"model" => $model
+	"data" => $conllu, ## "data" => $vert,
+	"model" => $model,
+	"input" => "conllu",
+	"output" => "conllu-ne",
 );
 
 if ( $debug ) { print $data; };
@@ -89,51 +94,55 @@ if ( !$jsonkont ) {
 	print $res->message();
 	exit;
 };
-$jf = "<doc>".$jsonkont->{'result'}."</doc>";
+# $jf = "<doc>".$jsonkont->{'result'}."</doc>";
+$jf = $jsonkont->{'result'}; 
 $jf =~ s/\\n/\n/g;
-if ( $debug ) { print $jf; };
-eval {
-	$outdoc = $parser->load_xml(string => $jf);
+if ( $debug ) { print $jf; }; 
+foreach $line ( split("\n", $jf) ) {
+	@tmp = split("\t", $line);
+	if ( $tmp[9] =~ /(.*?)\|(.*)/ ) { 
+		$tokid = $1; $ners = $2;	
+		foreach $ner ( split("-", $ners) ) {
+			if ( $ner =~ /NE=(.*)_(\d+)/ ) {
+				$type = $1; $nerid = $2;
+				$nerlist{$nerid} .= "$tokid,";
+				$nertype{$nerid} = $type;
+			};
+		}
+	};
 };
-if ( !$outdoc ) {
+if ( !$jf ) {
 	print "Unable to parse result";
 	exit;
 };
 
-foreach $outtok ( $outdoc->findnodes("//token") ) {
-	$outtok->setAttribute('id', "w-".++$n);
-};
 
-foreach $ne ( $outdoc->findnodes("//ne") ) {
-	if ( $debug ) { print $ne->toString; };
-	
-	undef(@idlist);
-	foreach $netok ( $ne->findnodes(".//token") ) {
-		push(@idlist, $netok->getAttribute('id'));
-	};
-
-	if ( $debug ) { print join(";", @idlist); };
+while ( ($nerid, $ids ) = each(%nerlist) ) {
+	$type = $nertype{$nerid};
+	$ids =~ s/,$//;
+	@idlist = split(",", $ids);
 	$t1 = $idlist[0]; $tx = $idlist[-1];
-	$tok1 = $doc->findnodes("//tok[\@id=\"$t1\"]")->item(0);
-	if ( $debug && $tok1 ) { print $tok1->toString; };
-	
-	$newne = $doc->createElement('name');
-	$newne->setAttribute('type', $ne->getAttribute('type'));
-	if ( $debug ) {  $newne->setAttribute('ids', join(";", @idlist)); };
-	if ( $tok1 ) { 
-		$tok1->parentNode->insertBefore($newne, $tok1);
-	} else {
-		print "No parent node for $t1";
-	};
-	
-	while ( $sib = $newne->nextSibling() ) {
-		$newne->addChild($sib);
-		if ( $sib->nodeType == 1 && $sib->getAttribute('id') eq $tx ) { 
-			last; 
+	if ( $debug ) { print $nerid, $ids, $type, "$t1 - $tx"; };
+	$tmp = $doc->findnodes("//tok[\@id=\"$t1\"]");
+	if ( $tmp ) {
+		$tok1 = $tmp->item(0);
+		$newne = $doc->createElement('name');
+		$newne->setAttribute('type', $type);
+		if ( !$nocorresp ) { $newne->setAttribute('corresp', "#".join(" #", @idlist)); };
+		if ( $tok1 ) { 
+			$tok1->parentNode->insertBefore($newne, $tok1);
+
+			while ( $sib = $newne->nextSibling() ) {
+				$newne->addChild($sib);
+				if ( $sib->nodeType == 1 && $sib->getAttribute('id') eq $tx ) { 
+					last; 
+				};
+			};
+			if( $debug ) { 	print $newne->toString(1); };
+		} else {
+			print "No parent node for $t1";
 		};
 	};
-	if( $debug ) { 	print $newne->toString(1); };
-
 };
 
 # Add a revisionDesc to indicate the file was tokenized
