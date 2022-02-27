@@ -12,7 +12,7 @@ GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
             'force' => \$force, # tokenize to string, do not change the database
-            'nocorresp' => \$nocorresp, # do not place a @corresp on the names
+            'noids' => \$noids, # do not place a @corresp on the names
             'model=s' => \$model, # language of input
             'lang=s' => \$lang, # language of input
             'langxp=s' => \$langxp, # language of input
@@ -128,7 +128,7 @@ while ( ($nerid, $ids ) = each(%nerlist) ) {
 		$tok1 = $tmp->item(0);
 		$newne = $doc->createElement('name');
 		$newne->setAttribute('type', $type);
-		if ( !$nocorresp ) { $newne->setAttribute('corresp', "#".join(" #", @idlist)); };
+		if ( !$noids ) { $newne->setAttribute('sameAs', "#".join(" #", @idlist)); };
 		if ( $tok1 ) { 
 			$tok1->parentNode->insertBefore($newne, $tok1);
 

@@ -63,7 +63,7 @@ if ( !$model ) {
 		if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
 		print "Choosing $model for $lang";
 	};
-} elsif ( !$models{$model} && !$force ) { print "No such UDPIPE model: $model"; exit;  };
+} elsif ( !$models{$model} && !$force && !-e $model ) { print "No such UDPIPE model: $model"; exit;  };
 
 print "Using model: $model";
 
@@ -234,6 +234,10 @@ sub parsetok ($tok) {
 	} else {
 		$lemma = $upos = $xpos = "_";
 	};
+	if ( $feats eq '' ) { $feats = "_"; };
+	if ( $lemma eq '' ) { $lemma = "_"; };
+	if ( $upos eq '' ) { $upos = "_"; };
+	if ( $xpos eq '' ) { $xpos = "_"; };
 	
 	return "$num\t$form\t$lemma\t$upos\t$xpos\t$feats\t_\t_\t_\t$tokid\n"; $num++;
 };
