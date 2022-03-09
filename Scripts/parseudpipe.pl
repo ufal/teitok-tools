@@ -396,14 +396,14 @@ sub putbacksent($sent, $tok) {
 			$tokid = $misc; 
 			$tok = $tokhash{$tokid}; # Read from hash
 			if ( $i ) { $tok->setAttribute('ord', $i); };
-			if ( $lemma ) { $tok->setAttribute('lemma', $lemma); };
-			if ( $upos ) { $tok->setAttribute('upos', $upos); };
-			if ( $xpos ) { $tok->setAttribute('xpos', $xpos); };
-			if ( $feats ) { $tok->setAttribute('feats', $feats); };
-			if ( $head ) { $tok->setAttribute('head', $ord2id{$head}); };
-			if ( $head ) { $tok->setAttribute('ohead', $head); };
-			if ( $deprel ) { $tok->setAttribute('deprel', $deprel); };
-			if ( $deps ) { $tok->setAttribute('deps', $deps); };
+			if ( $lemma && $lemma ne '_' ) { $tok->setAttribute('lemma', $lemma); };
+			if ( $upos && $upos ne '_') { $tok->setAttribute('upos', $upos); };
+			if ( $xpos && $xpos ne '_') { $tok->setAttribute('xpos', $xpos); };
+			if ( $feats && $feats ne '_') { $tok->setAttribute('feats', $feats); };
+			if ( $head && $head ne '_') { $tok->setAttribute('head', $ord2id{$head}); };
+			if ( $head && $head ne '_') { $tok->setAttribute('ohead', $head); };
+			if ( $deprel && $deprel ne '_') { $tok->setAttribute('deprel', $deprel); };
+			if ( $deps && $deps ne '_') { $tok->setAttribute('deps', $deps); };
 			if ( $debug ) { print $tokid, $tok->toString; };
 		};
 	}; 
