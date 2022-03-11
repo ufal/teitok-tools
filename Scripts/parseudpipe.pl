@@ -18,6 +18,7 @@ GetOptions ( ## Command line options
             'nocheck' => \$nocheck, # assume all checks pass
             'writeback' => \$writeback, # write back to original file or put in new file
             'file=s' => \$file, # file to tag
+            'modfolder=s' => \$modfolder, # file to tag
             'model=s' => \$model, # which UDPIPE model to use
             'lang=s' => \$lang, # language of the texts (if no model is provided)
             'folder=s' => \$folder, # Originals folder
@@ -68,7 +69,9 @@ if ( !$model ) {
 		if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
 		print "Choosing $model for $lang";
 	};
-} elsif ( !$models{$model} && !$force && !-e $model ) { print "No such UDPIPE model: $model"; exit;  };
+} elsif ( !$models{$model} && !$force ) { print "No such UDPIPE model: $model"; exit;  };
+
+# if ( !-e $model ) { print "No such UDPIPE model: $model"; exit;  };
 
 if ( $verbose ) { print "Using model: $model"; };
 
