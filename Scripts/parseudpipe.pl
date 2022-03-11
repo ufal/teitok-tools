@@ -13,6 +13,7 @@ use Encode;
 $scriptname = $0;
 
 GetOptions ( ## Command line options
+            'verbose' => \$verbose, # debugging mode
             'debug' => \$debug, # debugging mode
             'writeback' => \$writeback, # write back to original file or put in new file
             'file=s' => \$file, # file to tag
@@ -37,8 +38,10 @@ $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 $parser = XML::LibXML->new(); 
 
 if ( !$token ) { 
-	$tokxp = "//tok[not(dtok)] | //dtok"; 
 	$token = "tok"; 
+};
+if ( !$tokxp ) {
+	$tokxp = "//tok[not(dtok)] | //dtok"; 
 };
 if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
 
@@ -121,6 +124,29 @@ sub treatfile ( $fn ) {
 			print FILE $rawxml;
 			close FILE;
 			return -1;
+		};
+		
+		if ( $noid = $xml->findnodes("//tok[not(\@id)] | //dtok[not(\@id)]") ) {
+			$tokcnt = scalar @{$xml->findnodes("//".$token."[\@id]")};
+			if ( $verbose ) { 
+				print "There are unnumbered (d)toks - renumbering";
+			};
+			foreach $node ( @{$noid} ) {
+				$nn = $node->nodeName();
+				if ( $nn eq 'tok' ) {
+					print "tok";
+					$newid = "w-".++$tokcnt;
+				} elsif ( $nn eq 'dtok' ) {
+					print "dtok";
+					$tokid = $node->parentNode->getAttribute('id');
+					$newid = $tokid;
+					$newid =~ s/w-/d-/;
+					$dcnt{$tokid}++; 
+					$newid .= "-".$dcnt{$tokid}; 
+				} else { print "??$nn"; };
+				if ( $newid ) { $node->setAttribute('id', $newid); };
+				if ( $verbose ) { print "Set new ID for $nn to $newid"; };
+			};
 		};
 		
 		$num = 1; 
