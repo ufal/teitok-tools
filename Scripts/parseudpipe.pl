@@ -15,6 +15,7 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'verbose' => \$verbose, # debugging mode
             'debug' => \$debug, # debugging mode
+            'nocheck' => \$nocheck, # assume all checks pass
             'writeback' => \$writeback, # write back to original file or put in new file
             'file=s' => \$file, # file to tag
             'model=s' => \$model, # which UDPIPE model to use
@@ -37,6 +38,7 @@ $\ = "\n"; $, = "\t";
 $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 $parser = XML::LibXML->new(); 
 
+if ( $debug ) { $verbose = 1; };
 if ( !$token ) { 
 	$token = "tok"; 
 };
@@ -126,6 +128,7 @@ sub treatfile ( $fn ) {
 			return -1;
 		};
 		
+		if ( !$nocheck ) {
 		if ( $noid = $xml->findnodes("//tok[not(\@id)] | //dtok[not(\@id)]") ) {
 			$tokcnt = scalar @{$xml->findnodes("//".$token."[\@id]")};
 			if ( $verbose ) {  print "There are unnumbered (d)toks - renumbering"; };
@@ -143,7 +146,7 @@ sub treatfile ( $fn ) {
 				if ( $newid ) { $node->setAttribute('id', $newid); };
 				if ( $debug ) { print "Set new ID for $nn to $newid"; };
 			};
-		};
+		};};
 
 		if ( $verbose ) { print "\nExporting to CoNLL-U"; };
 		
