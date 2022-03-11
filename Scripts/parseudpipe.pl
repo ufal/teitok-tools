@@ -68,7 +68,7 @@ if ( !$model ) {
 	};
 } elsif ( !$models{$model} && !$force && !-e $model ) { print "No such UDPIPE model: $model"; exit;  };
 
-print "Using model: $model";
+if ( $verbose ) { print "Using model: $model"; };
 
 if ( !$writeback) { mkdir("udpipe"); };
 @formatts = split( ",", $atts );
@@ -90,7 +90,7 @@ sub treatfile ( $fn ) {
 	$tokcnt = 1;
 	$fn = $_; if ( !$fn ) { $fn = @_[0]; }; $orgfile = $fn;
 	if ( !-d $fn ) { 
-		print "\nTreating $fn";
+		if ( $verbose ) { print "\nTreating $fn"; };
 	
 		$/ = undef;
 		open FILE, $fn;
@@ -128,16 +128,12 @@ sub treatfile ( $fn ) {
 		
 		if ( $noid = $xml->findnodes("//tok[not(\@id)] | //dtok[not(\@id)]") ) {
 			$tokcnt = scalar @{$xml->findnodes("//".$token."[\@id]")};
-			if ( $verbose ) { 
-				print "There are unnumbered (d)toks - renumbering";
-			};
+			if ( $verbose ) {  print "There are unnumbered (d)toks - renumbering"; };
 			foreach $node ( @{$noid} ) {
 				$nn = $node->nodeName();
 				if ( $nn eq 'tok' ) {
-					print "tok";
 					$newid = "w-".++$tokcnt;
 				} elsif ( $nn eq 'dtok' ) {
-					print "dtok";
 					$tokid = $node->parentNode->getAttribute('id');
 					$newid = $tokid;
 					$newid =~ s/w-/d-/;
@@ -145,9 +141,11 @@ sub treatfile ( $fn ) {
 					$newid .= "-".$dcnt{$tokid}; 
 				} else { print "??$nn"; };
 				if ( $newid ) { $node->setAttribute('id', $newid); };
-				if ( $verbose ) { print "Set new ID for $nn to $newid"; };
+				if ( $debug ) { print "Set new ID for $nn to $newid"; };
 			};
 		};
+
+		if ( $verbose ) { print "\nExporting to CoNLL-U"; };
 		
 		$num = 1; 
 		if ( $sent || $sentxp ) { 
@@ -228,7 +226,7 @@ sub treatfile ( $fn ) {
 			( $tmp = $outfile ) =~ s/\/[^\/]+$//;
 			`mkdir -p $tmp`;
 		};
-		print "Writing parsed file to $outfile\n";
+		if ( $verbose ) { print "Writing parsed file to $outfile\n"; };
 
 		$rawxml = $xml->toString;
 		$rawxml =~ s/xmlnstmp=/xmlns=/;
@@ -320,11 +318,15 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		print FILE $raw;
 		close FILE;
 		
-		print " - Writing VRT file to $tmpfile";
+		if ( $verbose ) { print " - Writing VRT file to $tmpfile"; };
 		$cmd = "/usr/local/bin/udpipe $modes --input=conllu --outfile='$udfile' $model $tmpfile";
-		print " - Parsing with UDPIPE / $model to $udfile";
-		print $cmd;
-		`$cmd`;
+		if ( $verbose ) { print " - Parsing with UDPIPE / $model to $udfile"; };
+		if ( $debug ) { print $cmd; };
+		if ( $verbose ) {
+			`$cmd`;
+		} else {
+			`$cmd >> /dev/null 2>&1`;
+		};
 						
 	} else {
 
@@ -343,7 +345,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		# $jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
 		$jsonkont = decode_json($res->decoded_content);
 
-		print " - Writing CoNLL-U to $udfile";
+		if ( $verbose ) { print " - Writing CoNLL-U to $udfile"; };
 		open FILE, ">$udfile";
 		binmode (FILE, ":utf8");
 		print FILE $jsonkont->{'result'};
