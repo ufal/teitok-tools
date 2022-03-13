@@ -110,7 +110,7 @@ sub treatfile ( $fn ) {
 		if ( $rawxml !~ /<\/$token>/  ) {
 			print "Not tokenized - tokenizing";
 			( $tokr = $scriptname ) =~ s/parseudpipe/xmltokenize/;
-			$cmd = "perl $tokr $fn";  
+			$cmd = "perl $tokr --sent=2 $fn";  
 			print $cmd;
 			`$cmd`;
 			open FILE, $fn;

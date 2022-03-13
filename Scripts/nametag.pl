@@ -10,6 +10,7 @@ binmode(STDOUT, ":utf8");
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
+            'verbose' => \$verbose, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
             'force' => \$force, # tokenize to string, do not change the database
             'noids' => \$noids, # do not place a @corresp on the names
@@ -130,6 +131,9 @@ while ( ($nerid, $ids ) = each(%nerlist) ) {
 		$newne->setAttribute('type', $type);
 		if ( !$noids ) { $newne->setAttribute('sameAs', "#".join(" #", @idlist)); };
 		if ( $tok1 ) { 
+			if ( $verbose ) {
+				print " - adding NER $type on $ids ($nerid)";
+			};
 			$tok1->parentNode->insertBefore($newne, $tok1);
 
 			while ( $sib = $newne->nextSibling() ) {
