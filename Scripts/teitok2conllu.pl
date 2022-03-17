@@ -108,6 +108,13 @@ if ( $sents ) {
 		};
 		$num++;
 	};
+	if ( $sentlines ) {
+		print OUTFILE "# sent_id s-".$snum++; 
+		print OUTFILE "# text = $senttxt";
+		print OUTFILE putheads($sentlines);
+		$sentlines = ""; $senttxt = "";
+		$toknr = 0;
+	};
 };
 print OUTFILE "\n";
 close OUTFLE;
