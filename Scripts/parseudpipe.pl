@@ -18,11 +18,13 @@ GetOptions ( ## Command line options
             'nocheck' => \$nocheck, # assume all checks pass
             'writeback' => \$writeback, # write back to original file or put in new file
             'file=s' => \$file, # file to tag
+            'extfile=s' => \$extfile, # use an external file as parsed CoNLL-U
             'modfolder=s' => \$modfolder, # file to tag
             'model=s' => \$model, # which UDPIPE model to use
             'lang=s' => \$lang, # language of the texts (if no model is provided)
             'folder=s' => \$folder, # Originals folder
             'token=s' => \$token, # token node
+            'xpos=s' => \$xpostag, # attribute to use for XPOS
             'tokxp=s' => \$tokxp, # token XPath
             'sent=s' => \$sent, # sentence node
             'sentxp=s' => \$sentxp, # sentence XPath
@@ -47,9 +49,54 @@ if ( !$tokxp ) {
 	$tokxp = "//tok[not(dtok)] | //dtok"; 
 };
 if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
+if ( !$xpostag ) { $xpostag = "xpos"; };
 
 if ( !$file ) { $file = shift; };
 if ( !$mode ) { $mode = "local"; };
+
+if ( $extfile ) {
+	if ( $verbose ) { print "Taking input from: $extfile"; };
+	$/ = undef;
+	open FILE, $file;
+	binmode (FILE, ":utf8");
+	$rawxml = <FILE>;
+	close FILE;
+	$rawxml =~ s/xmlns=/xmlnstmp=/;
+	eval {
+		$xml = $parser->load_xml(string => $rawxml, load_ext_dtd => 0);
+	};
+	foreach $tok ( $xml->findnodes($tokxp) ) {
+		$tokid = $tok->getAttribute('id').'';
+		$tokhash{$tokid} = $tok;
+	};
+	parseconllu($extfile);
+	
+	# Add the revision statement
+	$revnode = makenode($xml, "/TEI/teiHeader/revisionDesc/change[\@who=\"conllu\"]");
+	$when = strftime "%Y-%m-%d", localtime;
+	$revnode->setAttribute("when", $when);
+	$revnode->appendText("loaded parsing data from $extfile");
+	
+	if ( $writeback ) { 
+		$outfile = $file;
+	} else {
+		( $outfile = $file ) =~ s/udpipe/parsed/;
+		$outfile =~ s/\.conllu$/\.xml/;
+		( $tmp = $outfile ) =~ s/\/[^\/]+$//;
+		`mkdir -p $tmp`;
+	};
+	if ( $verbose ) { print "Writing parsed file to $outfile\n"; };
+
+	$rawxml = $xml->toString;
+	$rawxml =~ s/xmlnstmp=/xmlns=/;
+
+	open OUTFILE, ">$outfile";
+	# binmode (OUTFILE, ":utf8");	# TODO: Is this ever needed?	
+	print OUTFILE $rawxml;	
+	close OUTFLE;
+
+	exit;
+};
 
 ( $tmp = $0 ) =~ s/Scripts.*/Resources\/udpipe-models.txt/;
 open FILE, $tmp; %udm = ();
@@ -71,8 +118,6 @@ if ( !$model ) {
 	};
 } elsif ( !$models{$model} && !$force ) { print "No such UDPIPE model: $model"; exit;  };
 
-# if ( !-e $model ) { print "No such UDPIPE model: $model"; exit;  };
-
 if ( $verbose ) { print "Using model: $model"; };
 
 if ( !$writeback) { mkdir("udpipe"); };
@@ -87,7 +132,6 @@ if ( $file ) {
 } else {
 	print "Please provide a file or folder to parse"; exit;
 };
-
 
 STDOUT->autoflush();
 
@@ -259,7 +303,7 @@ sub parsetok ($tok) {
 	if ( $task eq 'parse' ) {
 		$lemma = $tok->getAttribute('lemma') or $lemma = "_";
 		$upos = $tok->getAttribute('upos') or $upos = "_";
-		$xpos = $tok->getAttribute('xpos') or $xpos = "_";
+		$xpos = $tok->getAttribute($xpostag) or $xpos = "_";
 		$feats = $tok->getAttribute('feats') or $feats = "_";
 	} else {
 		$lemma = $upos = $xpos = "_";
@@ -376,9 +420,15 @@ sub parseconllu($fn) {
 		if ( $line =~ /# ?([a-z0-9A-Z\[\]¹_-]+) ?=? (.*)/ ) {
 			$sent{$1} = $2;
 		} elsif ( $line =~ /^(\d+)\t(.*)/ ) {
+			$tokcnt++;
 			@tmp = split ("\t", $line);
 			$tok{$1} = $2; $tokmax = $1; 
-			( $ord2id{$tmp[0]} = $tmp[9] ) =~ s/[\n\r]+//g;	
+			foreach $mfld ( split('\|', $tmp[9]) ) {
+				if ( $mfld ne '_' && $mfld !~ /=/ ) {
+					$tokid = $mfld;
+				};
+			};
+			$ord2id{$tmp[0]} = $tokid;	
 		} elsif ( $line =~ /^(\d+)-(\d+)\t(.*)/ ) {
 			# To do : mtok / dtok	
 			$mtok{$1} = $3; $etok{$2} = $3; $mtoke{$1} = $2;
@@ -393,7 +443,7 @@ sub parseconllu($fn) {
 			print "What? ($line)"; 
 		};
 	};
-	if ( $debug ) { print "done reading back CoNLL-U output"; };
+	if ( $debug ) { print "done reading back CoNLL-U output ($tokcnt tokens)"; };
 	if ( keys %sent ) { $linex .= putbacksent(%sent, %tok); }; # Add the last sentence if needed
 
 	return "";
@@ -421,19 +471,23 @@ sub putbacksent($sent, $tok) {
 				# Multiword
 			} else {
 				# DToks
-				$dtokxml = "<tok id=\"w-".$ord2id{$i}."\" ord=\"$i\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
+				$dtokxml = "<tok id=\"w-".$ord2id{$i}."\" ord=\"$i\" lemma=\"$mlemma\" upos=\"$mupos\" $xpostag=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
 			};
 		}		
 		if ( $dtokxml ) {
 			# Add a dtok
 		} else {	
-			$tokid = $misc; 
+			foreach $mfld ( split('\|', $misc) ) {
+				if ( $mfld ne '_' && $mfld !~ /=/ ) {
+					$tokid = $mfld;
+				};
+			};
 			$tok = $tokhash{$tokid}; # Read from hash
 			if ( $tok ) {
 				if ( $i ) { $tok->setAttribute('ord', $i); };
 				if ( $lemma && $lemma ne '_' ) { $tok->setAttribute('lemma', $lemma); };
 				if ( $upos && $upos ne '_') { $tok->setAttribute('upos', $upos); };
-				if ( $xpos && $xpos ne '_') { $tok->setAttribute('xpos', $xpos); };
+				if ( $xpos && $xpos ne '_') { $tok->setAttribute($xpostag, $xpos); };
 				if ( $feats && $feats ne '_') { $tok->setAttribute('feats', $feats); };
 				if ( $head && $head ne '_') { $tok->setAttribute('head', $ord2id{$head}); };
 				if ( $head && $head ne '_') { $tok->setAttribute('ohead', $head); };

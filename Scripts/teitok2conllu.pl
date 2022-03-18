@@ -27,10 +27,30 @@ GetOptions ( ## Command line options
             );
 
 $\ = "\n"; $, = "\t";
+
+$parser = XML::LibXML->new(); 
+
 if ( !$filename ) { $filename = shift; };
 
 if ( !$posatt ) { $posatt = "pos"; };
-if ( !$form ) { $form = "pform"; };
+if ( !$wform ) { 
+	$wform = "pform"; 
+} else {
+	# We need an inheritance from the settings
+	$doc = "";
+	$setfile = "Resources/settings.xml"; 
+	if ( $verbose ) { print "Reading settings from $setfile for inheritance from $wform	"; };
+	eval {
+		$setxml = $parser->load_xml(location => $setfile);
+	};
+	if ( $setxml ) { foreach $node ( $setxml->findnodes("//xmlfile/pattributes/forms/item") ) {
+		$from = $node->getAttribute("key");
+		$to = $node->getAttribute("inherit");
+		$inherit{$from} = $to;
+	};};
+	if ( !$inherit{'form'} ) { $inherit{'form'} = "pform"; };
+};
+if ( $debug ) { while ( ( $key, $val ) = each ( %inherit ) ) { print "Inherit: $key => $val"; }; };
 
 if ( $tagmapping && -e $tagmapping ) {
 	open FILE, $tagmapping;
@@ -50,7 +70,13 @@ eval {
 };
 if ( !$doc ) { print "Invalid XML in $filename"; exit; };
 
-if ( !$output ) { ( $output = $filename ) =~ s/\.xml/.conllu/; };
+if ( !$output ) { 
+	( $output = $filename ) =~ s/\.xml/.conllu/; 
+} else {
+	( $ofldr = $output ) =~ s/[^\/]+$//;
+	if ( $debug ) { print "Creating $ofldr when needed"; };
+	`mkdir -p $ofldr`;
+};
 
 if ( !$doc->findnodes("//tok") ) {
 	print "Error: cannot convert untokenized files to CoNNL-U";
@@ -100,8 +126,8 @@ if ( $sents ) {
 			$toknr = 0;
 		};
 		$newsent = 0;
-		@tmp = split("\t", $tokxml); 
 		$tokxml = parsetok($tok); $sentlines .= $tokxml; 
+		@tmp = split("\t", $tokxml); 
 		$senttxt .= $tmp[1]; if ( $tmp[9] !~ /Space/ ) { $senttxt .= " "; };
 		if ( $tmp[1] =~ /^[.!?]$/ ) { 
 			$newsent = 1;
@@ -152,15 +178,18 @@ sub parsetok($tk) {
 		$word = calcform($tk, $wform);
 		$word =~ s/\s+$//gsm;
 		$word =~ s/&#039;/''/g;
-		$lemma = $tk->getAttribute('lemma') or $lemma = "_";
-		$xpos = $tk->getAttribute('xpos') or $xpos = $tk->getAttribute($posatt) or $xpos = "_";
-		$upos = $tk->getAttribute('upos') or $upos = $xpos2upos{$xpos} or $upos = "_";
-		$feats = $tk->getAttribute('feats') or $feats = $xpos2feats{$xpos} or $feats = "_";
-		$head = $tk->getAttribute('head') or $head = "_";
-		$deprel = $tk->getAttribute('deprel') or $deprel = "_";
+		$lemma = getAttVal($tk, 'lemma');
+		$upos = getAttVal($tk, 'upos');
+		$xpos = getAttVal($tk, $posatt);
+		$feats = getAttVal($tk, 'feats');
+		$head = getAttVal($tk, 'head');
+		$deprel = getAttVal($tk, 'deprel');
+		$deps = getAttVal($tk, 'deps');
+		$misc = getAttVal($tk, 'misc');
+
 		if ( $deprel eq '_' && $training ) { $deprel = "dep"; }; # We always need a deprel for training the parser
-		$deps = $tk->getAttribute('deps') or $deps = "_";
-		$misc = $tk->getAttribute('misc');
+
+		if ( $misc eq '_' ) { $misc = ""; };
 		if ( $misc ) { $misc = $misc."|"; };
 		$misc .= $tokid; 
 		
@@ -200,15 +229,17 @@ sub parsetok($tk) {
 		$tokid = $dtk->getAttribute('id').'';
 		$toknrs{$tokid} = $toknr;
 		$word = calcform($dtk, $wform);
-		$lemma = $dtk->getAttribute('lemma') or $lemma = "_";
-		$upos = $dtk->getAttribute('upos') or $upos = "_";
-		$xpos = $dtk->getAttribute('xpos') or $xpos = $dtk->getAttribute($posatt) or $xpos = "_";
-		$feats = $dtk->getAttribute('feats') or $feats = "_";
-		$head = $dtk->getAttribute('head') or $head = "_";
-		$deprel = $dtk->getAttribute('deprel') or $deprel = "_";
+		$lemma = getAttVal($dtk, 'lemma');
+		$upos = getAttVal($dtk, 'upos');
+		$xpos = getAttVal($dtk, $posatt);
+		$feats = getAttVal($dtk, 'feats');
+		$head = getAttVal($dtk, 'head');
+		$deprel = getAttVal($dtk, 'deprel');
+		$deps = getAttVal($dtk, 'deps');
+		$misc = getAttVal($dtk, 'misc');
+
 		if ( $deprel eq '_' && $training ) { $deprel = "dep"; }; # We always need a deprel for training the parser
-		$deps = $dtk->getAttribute('deps') or $deps = "_";
-		$misc = $dtk->getAttribute('misc');
+
 		if ( $misc ) { $misc = $misc."|"; };
 		$misc .= $tokid;
 
@@ -226,18 +257,31 @@ sub parsetok($tk) {
 	
 };
 
+sub getAttVal ($node, $att ) {
+	( $node, $att ) = @_;
+	$val = $node->getAttribute($att);
+	$val =~ s/^\s+|\s+$//g;
+	$val =~ s/\t| //g;
+	$val =~ s/ +/ /g;
+	
+	if ( !$val ) { $val = "_"; };
+	
+	return $val;
+};
+
 sub calcform ( $node, $form ) {
 	( $node, $form ) = @_;
+	if ( !$node ) { return; };
 	
 	if ( $form eq 'pform' ) {
 		$value = $node->toString;
-		$value =~ s/<\/?tok[^>]*>//g;
+		$value =~ s/<[^>]*>//g;
 		return $value;
 		# return $node->textContent;
 	} elsif ( $node->getAttribute($form) ) {
 		return $node->getAttribute($form);
 	} elsif ( $inherit{$form} ) {
-		return calcform($ttnode, $inherit{$form});
+		return calcform($node, $inherit{$form});
 	} else {
 		return "_";
 	};
