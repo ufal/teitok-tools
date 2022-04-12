@@ -114,7 +114,7 @@ if ( !$model ) {
 	if ( $lang ) { 
 		$model = $code2model{$lang} or $model = $lang2model{lc($lang)};
 		if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
-		print "Choosing $model for $lang";
+		if ( $verbose ) { print "Choosing $model for $lang"; };
 	};
 } elsif ( !$models{$model} && !$force ) { print "No such UDPIPE model: $model"; exit;  };
 
@@ -244,7 +244,7 @@ sub treatfile ( $fn ) {
 		if ( !$model ) {
 			$lang = detectlang($rawtxt);
 			$model = $code2model{$lang};
-			print "Detected language : $lang => $model";
+			if ( $verbose ) { print "Detected language : $lang => $model"; };
 			if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
 		};
 	
@@ -334,7 +334,7 @@ sub detectlang ( $text ) {
 	};
 	$iso = $jsonkont->{'best'}; $name = $jsonkont->{'name'};
 	$model = $code2model{$iso} or $model = $lang2model{$name}; 
-	print " - Language detected: $iso / $name, using $model";
+	if ( $verbose ) { print " - Language detected: $iso / $name, using $model"; };
 	
 	return $iso;
 };
@@ -389,7 +389,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		);
 	
 		$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
-			print " - Running UDPIPE from $url / $model";
+		if ( $verbose ) { print " - Running UDPIPE from $url / $model"; };
 		$res = $ua->post( $url, \%form );
 		$jsdat = $res->decoded_content;
 		# $jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
@@ -480,6 +480,8 @@ sub putbacksent($sent, $tok) {
 			foreach $mfld ( split('\|', $misc) ) {
 				if ( $mfld ne '_' && $mfld !~ /=/ ) {
 					$tokid = $mfld;
+				} elsif ( $mfld =~ /tok_id=([^|]+)/ ) {
+					$tokid = $1;
 				};
 			};
 			$tok = $tokhash{$tokid}; # Read from hash

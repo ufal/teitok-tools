@@ -12,7 +12,8 @@ use XML::LibXML;
             'plain=s' => \$plainfile, # location of the plain text file
             'morerev=s' => \$morerev, # more revision statement
             'annfolder=s' => \$annfolder, # folder to write annotation to
-            'output=s' => \$outfile, # folder to write the brat file to
+            'annname=s' => \$annname, # annotation prefix
+            'output=s' => \$outfile, # file to write the XML file to
             );
 
 $/ = undef; $\ = "\n"; $, = "\t";
@@ -117,13 +118,18 @@ my $xml = XML::LibXML->load_xml(
 $root = $xml->findnodes("//text")->item(0);
 
 if ( $annfolder ) {
-	my $annxml = XML::LibXML->load_xml(
-		string => "<spanGrp/>",
+	$annxml = XML::LibXML->load_xml(
+		string => "<standOff $sotype><spanGrp/><linkGrp/></standOff>",
 	); if ( !$annxml ) { print FILE "Not able to parse annotation"; exit; };
-	$spans = $xml->findnodes("//text")->item(0);
+	$spans = $annxml->findnodes("//spanGrp")->item(0);
+	$links = $annxml->findnodes("//linkGrp")->item(0);
 } else {
 	$spans = $xml->createElement("spanGrp");
-	$root->addChild($spans);
+	$links = $xml->createElement("linkGrp");
+	$stoff = $xml->createElement("standOff");
+	$root->addChild($stoff);
+	$stoff->addChild($spans);
+	$stoff->addChild($links);
 };
 
 
@@ -132,32 +138,50 @@ open FILE, "$filename";
 binmode ( FILE, ":utf8" ); $cnt=1;
 while (<FILE>) {
 	chomp; $line = $_;
-	if ( /(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) { $id = $1; $type = $2; $begin = $3; $end = $4; $th = $5; };
 	if ( $line =~ /^#/ ) { next; };
-	
-	if ( $debug ) { print "$type: $begin-$end => $th"; };
 
-	$sep = ""; $span = ""; $spantext = "";
-	for ( $i=$mapto{$begin}; $i<$mapto{$end}+1; $i++ ) {
-		$span .= $sep."#w-".$i; 
-		$spantext .= $sep.$toktxt{$i};
-		$sep = " ";
+	if ( /^(R.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
+		$bratid = $1; $type = $2; $arg1 = $3; $arg2 = $4; $th = $5; 
+		if ( $arg1 =~ /(.*):(.*)/ ) { 
+			$an = $1; $br1 = $2; $tmp = $br2tt{$br1} or $tmp = "[$br1]"; $id1 = "#$tmp"; 
+			print "ARG1: $br1 => #$tmp";
+		};
+		if ( $arg2 =~ /(.*):(.*)/ ) { 
+			$an = $1; $br2 = $2; $tmp = $br2tt{$br2} or $tmp = "[$br2]"; $id2 = "#$tmp"; 
+		};
+		$annotation = "<link source=\"$id1\" target=\"$id2\" code=\"$type\" $auto id=\"an-".$cnt++."\" brat_id=\"$bratid\" brat_def=\"$arg1-$arg2\"/>\n";
+		my $annnode = XML::LibXML->load_xml(
+			string => $annotation,
+		); if ( !$annnode ) { print FILE "Not able to parse annotation"; exit; };
+		$links->addChild($annnode->firstChild);
+		$links->appendText("\n");
+	} elsif ( /^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) { 
+		$bratid = $1; $type = $2; $begin = $3; $end = $4; $th = $5; 
+		if ( $debug ) { print "$type: $begin-$end => $th"; };
+
+		$sep = ""; $span = ""; $spantext = "";
+		for ( $i=$mapto{$begin}; $i<$mapto{$end}+1; $i++ ) {
+			$span .= $sep."#w-".$i; 
+			$spantext .= $sep.$toktxt{$i};
+			$sep = " ";
+		};
+	
+		# Deal with word-internal annotations
+		$posi = "";
+	
+		if ( $th ne $spantext ) { print "Oops: $th ne $spantext"; };
+
+		if ( $debug ) { print "  -- found at $mapto{$begin} - $mapto{$end} = $span = $spantext"; };
+		$annotation = "<span corresp=\"$span\" code=\"$type\" $auto id=\"an-".$cnt++."\"$posi  brat_id=\"$bratid\" range=\"$begin-$end\">".$th."</span>\n";
+		$br2tt{$bratid} = "an-".$cnt;
+		my $annnode = XML::LibXML->load_xml(
+			string => $annotation,
+		); if ( !$annnode ) { print FILE "Not able to parse annotation"; exit; };
+		$spans->addChild($annnode->firstChild);
+		$spans->appendText("\n");
 	};
+	$br2tt{$bratid} = "an-".$cnt;
 	
-	# Deal with word-internal annotations
-	$posi = "";
-	
-	if ( $th ne $spantext ) { print "Oops: $th ne $spantext"; };
-
-	if ( $debug ) { print "  -- found at $mapto{$begin} - $mapto{$end} = $span = $spantext"; };
-	$annotation = "<span range=\"$begin-$end\" corresp=\"$span\" code=\"$type\" $auto id=\"an-".$cnt++."\"$posi>".$th."</span>\n";
-
-	my $annnode = XML::LibXML->load_xml(
-		string => $annotation,
-	); if ( !$annnode ) { print FILE "Not able to parse annotation"; exit; };
-	$spans->addChild($annnode->firstChild);
-	$spans->appendText("\n");
-
 };
 close FILE;
 
@@ -167,12 +191,14 @@ print FILE $xml->toString;
 close FILE;
 print "Wrote xml file to $outfile";
 
-if ( $annfolder ) {
-	open FILE, ">$annfolder/brat_$basename.xml";
+if ( $annxml ) {
+	if ( $annname eq "" ) { $annname = "brat"; };
+	$annfile = "$annfolder/$annname"."_$basename.xml";
+	open FILE, ">$annfile";
 	#binmode(FILE, ":utf8");
-	print FILE $xml->toString;
+	print FILE $annxml->toString;
 	close FILE;
-	print "Wrote annotation file to $outfolder/$basename.xml";
+	print "Wrote annotation file to $annfile";
 };
 
 

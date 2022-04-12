@@ -16,6 +16,7 @@ GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'verbose' => \$verbose, # debugging mode
             'writeback' => \$writeback, # write back to original file or put in new file
+            'longid' => \$longid, # write tok_id= in the misc column
             'file=s' => \$filename, # input file name
             'posatt=s' => \$posatt, # name to use for pos
             'form=s' => \$wform, # form to use as word
@@ -191,7 +192,11 @@ sub parsetok($tk) {
 
 		if ( $misc eq '_' ) { $misc = ""; };
 		if ( $misc ) { $misc = $misc."|"; };
-		$misc .= $tokid; 
+		if ( $longid ) { 
+			$misc .= $tokid; 
+		} else {
+			$misc .= "tok_id=".$tokid; 
+		};
 		
 		# fallback
 		if ( $word eq '' ) { $word = "_"; };
@@ -210,7 +215,11 @@ sub parsetok($tk) {
 		$tokid = $tk->getAttribute('id').'';
 		$misc = $tk->getAttribute('misc');
 		if ( $misc ) { $misc = $misc."|"; };
-		$misc .= $tokid; 
+		if ( $longid ) { 
+			$misc .= $tokid; 
+		} else {
+			$misc .= "tok_id=".$tokid; 
+		};
 
 		if ( $word eq '' ) { $word = "_"; };
 		if ( $misc eq '' ) { $misc = ""; };

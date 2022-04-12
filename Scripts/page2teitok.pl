@@ -5,6 +5,7 @@
 use XML::LibXML;
 use Getopt::Long;
 use utf8;
+use Data::Dumper;
 use POSIX qw(strftime);
 
 $\ = "\n"; $, = "\t";
@@ -118,6 +119,46 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 					$text .= "\n  $befpunc<tok id=\"$tokid\" corresp=\"#$facsid4\" bbox=\"$bbox\">$toktext</tok>$aftpunc";
 				};
 			} else {
+				# Deal with the @custom field: reading order and tags
+				$custom = $line->getAttribute('custom');
+				undef(%begin); undef(%end);
+				if ( $custom ) {
+					while ( $custom =~ s/^([^ ]+) {([^{}]+)} *// ) {
+						$key = $1; $val = $2;
+						if ( $val =~ /offset:(\d+); length:(\d+);(.*)/ ) {
+							$lbl = $key; $lbl2 = "";
+							if ( $lbl eq 'textStyle' ) { $lbl = "hi"; $lbl2 = "_".$3; $lbl2 =~ s/:.*//; };
+							$off = $1; $len = $2;
+							$begin{$off-1} .= "$lbl$lbl2;";
+							$end{$off+$len} .= "$lbl;";
+						};
+					};
+					$annline = "";
+					$linetext =~ s/^\s+|\s+$//g;
+					for ( $i=0; $i<length($linetext)+2; $i++ ) {
+						if ( $end{$i} ) {
+							foreach $lbl ( split(";", $end{$i} ) ) {
+								if ( $lbl ) { $annline .= "</$lbl>"; };
+							}; 
+						};
+						if ( $begin{$i} ) {
+							foreach $lbl ( split(";", $begin{$i} ) ) {
+								if ( $lbl ) { $annline .= "<$lbl>"; };
+							}; 
+						};
+						$annline .= substr($linetext, $i,1);
+					};
+					$annline =~ s/<hi_([^<>]+)>/<hi rend="\1">/g;;
+					# Check this stayed valid XML
+					undef($ctest);
+					eval { $ctest = $parser->load_xml(string => "<line>$annline</line>", {  load_ext_dtd => 0 }); };
+					if ( $ctest ) { $linetext = $annline; } 
+					elsif ( $debug ) { 
+						print "Oops: $annline";
+						print $line->getAttribute('custom');
+						print "---------- "; 
+					};
+				};
 				$text .= " ".$linetext;
 			};
 		};
@@ -150,13 +191,13 @@ if ( !$check ) { print "Oops - turned into invalid XML"; exit; };
 
 if ( $test ) {
 	print "Conversion completed"; 
-	print $teixml;
+	print $check->toString;
 	exit;
 };
 
 open FILE, ">$output";
 print "Writing output to $output";
-print FILE $teixml;
+print FILE $check->toString;
 close FILE;
 
 sub makebb ( $tmp ) {
