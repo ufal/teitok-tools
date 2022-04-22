@@ -78,6 +78,9 @@ for $i (0..length($text)-1){
 	
     	$mf= ""; if ( $word =~ /\*/ ) { $mf = " mf=\"$word\""; $word =~ s/\*//g; };
     	$begins{$tokcnt} = $ws; $ends{$tokcnt} = $we;
+    	$word =~ s/&(?![^ ]+;)/&amp;/g;
+    	$word =~ s/</&lt;/g;
+    	$word =~ s/>/&gt;/g;
     	$toktxt{$tokcnt} = $word;
     	$toks .= "$befp<tok id=\"w-$tokcnt\" idx=\"$ws-$we\"$mf>$word</tok>$aftp$char";
     	$ws = $i+1;
