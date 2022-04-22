@@ -21,10 +21,9 @@ $/ = undef; $\ = "\n"; $, = "\t";
 if ( !$filename ) { $filename = shift; };
 if ( !-e $filename && $filename !~ /\.ann$/ ) { $filename .= ".ann"; };
 if ( !-e $filename ) { print "Error: annotation file not found - $filename"; };
-( $basename = $filename ) =~ s/\.[^.]+$//; $basename =~ s/.*\///;
+( $basename = $filename ) =~ s/\.[^.]+$//; $basename =~ s/.*\///; $basename =~ s/\.xml$//;
 if ( !$plainfile ) { ( $plainfile = $filename ) =~ s/\.ann$/.txt/; };
 if ( !$outfile ) { ( $outfile = $filename ) =~ s/\.ann$/.xml/; };
-$outfile = s/\.xml\.xml/.xml/; # For in case the .ann file is named .xml.ann
 
 if ( !-e $plainfile ) { sleep 5; };
 if ( !-e $plainfile ) { print "Error: text file not found - $plainfile"; };
