@@ -109,6 +109,11 @@ foreach $node ( $doc->findnodes("//*[\@id]") ) {
 	$node->setAttribute('xml:id', $val);
 };
 
+# Remove all <ee/>
+foreach $node ( $doc->findnodes("//ee") ) {
+	$node->parentNode->removeChild($node);
+};
+
 # Convert <tok> to <w> and <pc>
 $tcnt = 0;
 foreach $tk ( $doc->findnodes("//text//tok") ) {

@@ -22,6 +22,7 @@ GetOptions ( ## Command line options
             'form=s' => \$wform, # form to use as word
             'output=s' => \$output, # output file name
             'folder=s' => \$folder, # Originals folder
+            'outfolder=s' => \$outfolder, # Originals folder
             'pos=s' => \$posatt, # XPOS tag
             'tagmapping=s' => \$tagmapping, # XPOS tag
             'training' => \$training, # write back to original file or put in new file
@@ -73,6 +74,9 @@ if ( !$doc ) { print "Invalid XML in $filename"; exit; };
 
 if ( !$output ) { 
 	( $output = $filename ) =~ s/\.xml/.conllu/; 
+	if ( $outfolder ) { 
+		$output =~ s/.*\//$outfolder\//;
+	};
 } else {
 	( $ofldr = $output ) =~ s/[^\/]+$//;
 	if ( $debug ) { print "Creating $ofldr when needed"; };
@@ -157,7 +161,7 @@ sub putheads($txt) {
 	} else {
 		$txt =~ s/{#_}/_/g;
 	};
-	$txt =~ s/{#[wd][-0-9]+}/0/g; # Remove heads that did not get placed
+	$txt =~ s/{#[^{}]+}/0/g; # Remove heads that did not get placed (no longer restricted to TEITOK numbering w-xxx or d-xxx)
 	
 	if ( $training ) { 
 		# Remove all 0's that are not root when training
