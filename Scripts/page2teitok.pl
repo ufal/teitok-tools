@@ -123,7 +123,7 @@ foreach $page ( $input->findnodes("/PcGts/Page") ) {
 				$custom = $line->getAttribute('custom');
 				undef(%begin); undef(%end);
 				if ( $custom ) {
-					while ( $custom =~ s/^([^ ]+) {([^{}]+)} *// ) {
+					while ( $custom =~ s/^([^ ]+) \{([^{}]+)\} *// ) {
 						$key = $1; $val = $2;
 						if ( $val =~ /offset:(\d+); length:(\d+);(.*)/ ) {
 							$lbl = $key; $lbl2 = "";

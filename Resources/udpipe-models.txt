@@ -63,12 +63,9 @@ mr	mar	marathi	marathi-ufal-ud-2.6-200830
 mt	mlt	maltese	maltese-mudt-ud-2.6-200830
 nl	nld	dutch	dutch-alpino-ud-2.6-200830
 nl	nld	dutch	dutch-lassysmall-ud-2.6-200830
-no	nno	norwegian	norwegian-bokmaal-ud-2.6-200830
 no	nno	norwegian	norwegian-nynorsk-ud-2.6-200830
 no	nno	norwegian	norwegian-nynorsklia-ud-2.6-200830
 no	nob	norwegian	norwegian-bokmaal-ud-2.6-200830
-no	nob	norwegian	norwegian-nynorsk-ud-2.6-200830
-no	nob	norwegian	norwegian-nynorsklia-ud-2.6-200830
 orv	orv	old_russian	old_russian-rnc-ud-2.6-200830
 orv	orv	old_russian	old_russian-torot-ud-2.6-200830
 pl	pll	polish	polish-lfg-ud-2.6-200830
