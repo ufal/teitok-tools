@@ -101,10 +101,10 @@ for $i (0..length($text)-1){
     	$se = $i;
     	$sent = substr($text, $ss, $se-$ss);
     	if ( $debug ) { print "Sentence: $sent"; };
-    	if ( $sent eq "\n" ) {
+    	if ( $sent eq "\n"  && $makepar ) {
     		# Empty line
 	    	$toks .= "</s></p><p><s>"; 
-    	} elsif ( $ss == $se ) {
+    	} elsif ( $ss == $se && $makepar ) {
     		# Empty line
 	    	$toks .= "</s></p><p><s>"; 
     	} else {
