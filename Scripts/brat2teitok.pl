@@ -7,7 +7,9 @@ use XML::LibXML;
 
  GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
+            'verbose' => \$verbose, # debugging mode
             'makesent' => \$makesent, # interpret new lines as sentence boundaries
+            'makepar' => \$makepar, # interpret new lines as sentence boundaries
             'file=s' => \$filename, # language of input
             'plain=s' => \$plainfile, # location of the plain text file
             'morerev=s' => \$morerev, # more revision statement
@@ -29,7 +31,7 @@ if ( !-e $plainfile ) { sleep 5; };
 if ( !-e $plainfile ) { print "Error: text file not found - $plainfile"; };
 
 $/ = undef;
-# binmode(STDOUT, ":utf8");
+binmode(STDOUT, ":utf8");
 
 open FILE, $plainfile;
 binmode(FILE, ":utf8");
@@ -40,15 +42,18 @@ if ( $text eq "" ) { print "Text not read."; exit; }
 
 $\ = "\n"; $, = "\t";
 
-$ws = 0; $ss = 0; $org = 1; $toks = ""; $cnt = 1;
+$ws = 0; $ss = 0; $toks = ""; $cnt = 1; # $org = 1; 
+if ( $makepar ) { $toks .= "<p>"; };
+if ( $makesent ) { $toks .= "<s>"; $newsent = 1; };
 for $i (0..length($text)-1){
     $char = substr($text, $i, 1);
     # print "Index: $i, Text: $char \n";
     		
 	$mapto{$i} = $cnt;
-    if ( ( $char eq " " || $char eq "\n" ) && $org ) {
+	if ( ( $char eq " " || $char eq "\n" ) ) { # && $org 
+    	# Assume a new token on each space or linebreak
     	$we = $i; $word = substr($text, $ws, $we-$ws);
-		$tokcnt = $cnt;
+		$tokcnt = $cnt; 
 		
 		# Split off left punctuations
 		$befp = ""; 
@@ -80,33 +85,52 @@ for $i (0..length($text)-1){
     	$word =~ s/&(?![^ ]+;)/&amp;/g;
     	$word =~ s/</&lt;/g;
     	$word =~ s/>/&gt;/g;
-    	$toktxt{$tokcnt} = $word;
-    	$toks .= "$befp<tok id=\"w-$tokcnt\" idx=\"$ws-$we\"$mf>$word</tok>$aftp$char";
-    	$ws = $i+1;
-    	$cnt++;
+    	$toks .= $befp;
+    	if ( $we > $ws ) {
+	    	$toktxt{$tokcnt} = $word;
+    		$toks .= "<tok id=\"w-$tokcnt\" idx=\"$ws-$we\"$mf>$word</tok>";
+	    	$cnt++;
+	    };
+    	$toks .= $aftp.$char;
+	    $ws = $i+1;
+    } else {
+    	$newsent = 0;
     };
     if ( $makesent && $char eq "\n" ) {
+    	# Create a new sent on newline if in sent mode
     	$se = $i;
-    	# print "Phrase ($org): ".substr( $text, $ss, $se-$ss );
-    	if ( $org == 0 ) {
-    		$ths = substr( $text, $ss, $se-$ss );
-    		$toks =~ s/ $//;
-    		$sent = "<s th=\"$ths\">".$toks."</s>\n";
-    		$sent =~ s/ ([,.!?)])/\1/g;
-    		$sent =~ s/([(]) /\1/g;
-    		# print $sent;
-    		$tei .= $sent;
-	    	$toks = "";
-    	};
-    	$ss = $i+1; $ws = $i+1;
-    	$org = 1-$org;
+    	$sent = substr($text, $ss, $se-$ss);
+    	if ( $debug ) { print "Sentence: $sent"; };
+    	if ( $sent eq "\n" ) {
+    		# Empty line
+	    	$toks .= "</s></p><p><s>"; 
+    	} elsif ( $ss == $se ) {
+    		# Empty line
+	    	$toks .= "</s></p><p><s>"; 
+    	} else {
+	    	$toks .= "</s><s>"; 
+	    };
+     	$ss = $i+1;
     };
+    $par =0;
            
 }
-if ( !$makesent ) { $tei = $toks; 	};
+if ( $makesent ) { $toks .= "</s>"; };
+if ( $makepar ) { $toks .= "</p>"; };
+$tei = $toks;
 
 $tei =~ s/ (<tok[^>]+>[,.!?)])/\1/g;
 $tei =~ s/([(]<\/tok>) /\1/g;
+
+# Remove empty sentences
+$tei =~ s/<s>(\n*)<\/s>/\1/g;
+$tei =~ s/<p>(\n*)<\/p>/\1/g;
+
+# Move linebreaks outside <s> and <p>
+$tei =~ s/\n<\/s>/<\/s>\n/g;
+$tei =~ s/\n<\/p>/<\/p>\n/g;
+$tei =~ s/\n<\/s>/<\/s>\n/g;
+$tei =~ s/\n<\/p>/<\/p>\n/g;
 
 $tei = "<TEI>
 <teiHeader/>
@@ -114,16 +138,20 @@ $tei = "<TEI>
 $tei</text>
 $annotation</TEI>";
 
-my $xml = XML::LibXML->load_xml(
-	string => $tei,
-); if ( !$xml ) { print FILE "Not able to parse generated TEI"; exit; };
+eval { $xml = XML::LibXML->load_xml( string => $tei, ); 
+}; if ( !$xml ) { 
+	print "Not able to parse generated TEI"; 
+	if ( $verbose ) { print $@; };
+	if ( $debug ) { print $tei; };
+	exit; 
+};
 
 $root = $xml->findnodes("//text")->item(0);
 
 if ( $annfolder ) {
 	$annxml = XML::LibXML->load_xml(
 		string => "<standOff $sotype><spanGrp/><linkGrp/></standOff>",
-	); if ( !$annxml ) { print FILE "Not able to parse annotation"; exit; };
+	); if ( !$annxml ) { print "Not able to parse annotation"; exit; };
 	$spans = $annxml->findnodes("//spanGrp")->item(0);
 	$links = $annxml->findnodes("//linkGrp")->item(0);
 } else {
