@@ -15,7 +15,6 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'verbose' => \$verbose, # debugging mode
-            'writeback' => \$writeback, # write back to original file or put in new file
             'longid' => \$longid, # write tok_id= in the misc column
             'file=s' => \$filename, # input file name
             'posatt=s' => \$posatt, # name to use for pos
@@ -105,13 +104,18 @@ if ( $sents ) {
 	$sntcnt = 1;
 	foreach $snt ( @{$sents} ) {
 		$sentid = $snt->getAttribute('id');
+		@toks =  $snt->findnodes(".//tok");
+		if ( ! scalar @toks ) { 
+			if ( $verbose ) { print "Skipping empty sentence $sentid"; };
+			next; 
+		};
 		if ( !$sentid ) { $sentid = "s-".$sntcnt++; $snt->setAttribute('id', $sentid); };
 		$senttxt = $snt->textContent;
-		$senttxt =~ s/\n/ /g; $senttext =~ s/ +/ /g;
+		$senttxt =~ s/\s/ /g; $senttext =~ s/ +/ /g;
 		print OUTFILE "# sent_id = $docid\_$sentid";
 		print OUTFILE "# text = $senttxt";
 		undef(%toknrs); # Undef to avoid sentence-crossing links
-		foreach $tok ( $snt->findnodes(".//tok") ) {
+		foreach $tok ( @toks ) {
 			$sentlines .= parsetok($tok);
 		};
 		print OUTFILE putheads($sentlines); 

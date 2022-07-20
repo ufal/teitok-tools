@@ -33,6 +33,7 @@ GetOptions ( ## Command line options
             'mode=s' => \$mode, # how to run UDPIPE (server or local - when /usr/local/bin/udpipe)
             'force' => \$force, # run without checks
             'task=s' => \$task, # run as tagger / parser
+            'emptys' => \$emptys, # keep <s> nodes as empty nodes (with a @corresp)
             'modelroot=s' => \$modelroot, # folder where the models are
             );
 
