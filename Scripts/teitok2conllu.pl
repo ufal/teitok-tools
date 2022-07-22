@@ -15,14 +15,14 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'verbose' => \$verbose, # debugging mode
+            'help' => \$help, # debugging mode
             'longid' => \$longid, # write tok_id= in the misc column
             'file=s' => \$filename, # input file name
             'posatt=s' => \$posatt, # name to use for pos
+            'pos=s' => \$posatt, # XPOS tag
             'form=s' => \$wform, # form to use as word
             'output=s' => \$output, # output file name
-            'folder=s' => \$folder, # Originals folder
             'outfolder=s' => \$outfolder, # Originals folder
-            'pos=s' => \$posatt, # XPOS tag
             'tagmapping=s' => \$tagmapping, # XPOS tag
             'training' => \$training, # write back to original file or put in new file
             );
@@ -32,6 +32,21 @@ $\ = "\n"; $, = "\t";
 $parser = XML::LibXML->new(); 
 
 if ( !$filename ) { $filename = shift; };
+
+if ( $help ) {
+	print "Usage: perl teitok2conllu.pl [options] filename
+
+Options:
+	--verbose	verbose output
+	--debug		debugging mode
+	--file		filename to convert
+	--output	conllu file to write to
+	--pos=s		XML attribute to use for @xpos
+	--form=s	TEITOK inherited form to use as @form
+	";
+	exit;
+
+};
 
 if ( !$posatt ) { $posatt = "pos"; };
 if ( !$wform ) { 
@@ -101,21 +116,74 @@ $sents = $doc->findnodes("//s");
 if ( !scalar $sents ) { $sents = $doc->findnodes("//u"); };
 if ( $sents ) { 
 	if ( $verbose ) { print "With sentences"; };
-	$sntcnt = 1;
+	$sntcnt = 0;
 	foreach $snt ( @{$sents} ) {
 		$sentid = $snt->getAttribute('id');
+		if ( !$sentid ) { 
+			$sentid = "[$sntcnt]"; 
+			if ( $verbose ) { print "Unnumbered sentence $sentid"; };
+		}; 
+		$sntcnt++;
 		@toks =  $snt->findnodes(".//tok");
 		if ( ! scalar @toks ) { 
 			if ( $verbose ) { print "Skipping empty sentence $sentid"; };
 			next; 
 		};
-		if ( !$sentid ) { $sentid = "s-".$sntcnt++; $snt->setAttribute('id', $sentid); };
 		$senttxt = $snt->textContent;
 		$senttxt =~ s/\s/ /g; $senttext =~ s/ +/ /g;
 		print OUTFILE "# sent_id = $docid\_$sentid";
 		print OUTFILE "# text = $senttxt";
 		undef(%toknrs); # Undef to avoid sentence-crossing links
+
+		# Check for loops
+		$tree = $parser->load_xml(string => "<s/>");
+		undef(%nodes); undef($rootid); undef($unrootid); undef($root);
 		foreach $tok ( @toks ) {
+			$tokid =  $tok->getAttribute("id");
+			$nodes{$tokid} = $tree->createElement("tok");
+			if ( $tok->getAttribute("deprel")."" eq "root" ) {
+				if  ( !$rootid ) { $rootid = $tokid; };
+			} elsif ( !$tok->getAttribute("head") || $tok->getAttribute("head")."" eq ""  ) {
+				$unrootid = $tokid;
+			};
+		}; if ( !$rootid ) { $rootid = $unrootid; };
+		if ( !$rootid ) { 
+			if ( $verbose ) { print "No root element found in $sentid"; };
+		};
+				
+		foreach $tok ( @toks ) {
+			$tokid =  $tok->getAttribute("id")."";
+			$headid =  $tok->getAttribute("head")."";
+			$deprel =  $tok->getAttribute("deprel")."";
+			if ( $rootid && $tokid ne $rootid && $deprel eq "root" ) {
+				if  ( $verbose ) { print "Linked or secondary marked as root in $sentid/$tokid (renaming to dep)"; };
+				$tok->setAttribute("deprel", "dep"); # We should not keep multiple roots
+			};
+			if ( $headid ) { 
+				if ( !$nodes{$headid} ) { 
+					if ( $verbose ) { print "Reference to non-existing node in $sentid: $tokid -> $headidc"; };
+					$tok->setAttribute("head", $rootid);
+					$nodes{$rootid}->addChild($nodes{$tokid});
+				} elsif ( $nodes{$headid}->findnodes(".//ancestor::tok[\@id=\"$tokid\"]") ) { 
+					if ( $verbose ) { print "Circular dependency in $sentid: $tokid -> $headid (reattaching to $rootid)"; };
+					$tok->setAttribute("head", $rootid);
+					$nodes{$rootid}->addChild($nodes{$tokid});
+				} else { eval {
+					$nodes{$headid}->addChild($nodes{$tokid});
+				}; };
+				if ( !$nodes{$tokid}->parentNode ) { 
+					if ( $verbose ) { print "Failed to attach $tokid in $sentid to $headid (reattaching to $rootid)"; };
+					$tok->setAttribute("head", $rootid);
+					$nodes{$rootid}->addChild($nodes{$tokid});
+				};
+			} else {
+				if ( $tokid ne $rootid ) { 
+					if  ( $verbose ) { print "Multiple roots in $sentid: $rootid and $tokid (reattaching to $rootid)"; };
+					$tok->setAttribute("head", $rootid);
+					$tok->setAttribute("deprel", "dep"); # We should not keep multiple roots
+				};
+				$tree->firstChild->addChild($nodes{$tokid});
+			};
 			$sentlines .= parsetok($tok);
 		};
 		print OUTFILE putheads($sentlines); 
