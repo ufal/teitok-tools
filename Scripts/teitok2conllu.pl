@@ -347,7 +347,11 @@ sub parsetok($tk) {
 		if ( $deprel eq '_' && $training ) { $deprel = "dep"; }; # We always need a deprel for training the parser
 
 		if ( $misc ) { $misc = $misc."|"; };
-		$misc .= $tokid;
+		if ( $longid ) { 
+			$misc .= $tokid; 
+		} else {
+			$misc .= "tok_id=".$tokid; 
+		};
 
 		# fallback
 		if ( $word eq '' ) { $word = "_"; };
