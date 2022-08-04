@@ -239,7 +239,8 @@ if ( $sents ) {
 		$toknr = 0;
 	};
 };
-print OUTFILE "\n";
+# This should not be needed
+# print OUTFILE "\n";
 close OUTFLE;
 
 sub putheads($txt) {
