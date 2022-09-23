@@ -19,7 +19,7 @@ binmode(FILE, ":utf8");
 $xml = <FILE>;
 close FILE;
 
-$xml =~ s/.*<text[^>]+>//sm;
+$xml =~ s/.*<text[^>]*>//sm;
 $xml =~ s/<\/text>.*//sm;
 
 $xml =~ s/\n+/ /g;
