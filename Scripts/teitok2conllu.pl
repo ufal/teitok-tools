@@ -88,7 +88,7 @@ eval {
 };
 if ( !$doc ) { print "Invalid XML in $filename"; exit; };
 
-if ( !$output ) { 
+if ( !$output && $outfolder ) { 
 	( $output = $filename ) =~ s/\.xml/.conllu/; 
 	if ( $outfolder ) { 
 		$output =~ s/.*\//$outfolder\//;
@@ -104,8 +104,12 @@ if ( !$doc->findnodes("//tok") ) {
 	exit;
 };
 
-print "Writing converted file to $output\n";
-open OUTFILE, ">$output";
+if ( $output ) {
+	print "Writing converted file to $output\n";
+	open OUTFILE, ">$output";
+} else {
+	*OUTFILE = STDOUT;
+};
 binmode(OUTFILE, ":utf8");
 
 # Convert <dtok> to <tok> (to be dealt with later)
