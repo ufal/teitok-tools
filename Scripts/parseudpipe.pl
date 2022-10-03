@@ -121,7 +121,7 @@ if ( !$model ) {
 
 if ( $verbose ) { print "Using model: $model"; };
 
-if ( !$writeback) { mkdir("udpipe"); };
+if ( !$writeback) { mkdir($tmpf."udpipe"); };
 @formatts = split( ",", $atts );
 
 if ( $file ) {
@@ -218,9 +218,11 @@ sub treatfile ( $fn ) {
 				$toklist .= "\n"; $num = 1;
 			};
 		} else {
-			$snum = 1;
+			$snum = 1; $mansent = 1;
 			$toklist = "# sent_id s-".$snum++."\n";
-			foreach $tok ( $xml->findnodes($tokxp) ) {
+			@atoks = $xml->findnodes($tokxp);
+			$tn = 0;
+			foreach $tok ( @atoks ) {
 				if ( $newsent ) { $toklist .= "# sent_id s-".$snum++."\n"; };
 				$newsent = 0;
 				$tokxml = parsetok($tok); 
@@ -230,11 +232,14 @@ sub treatfile ( $fn ) {
 				@tmp = split("\t", $tokxml); 
 				$rawtxt .= $tmp[1]." ";
 				if ( $tmp[1] =~ /^[.!?]$/ ) { 
-					$toklist .= "\n"; 
-					$newsent = 1;
-					$num = 0;
+					$chk = ""; if ( $atoks[($tn+1)] ) { $chk = $atoks[($tn+1)]->textContent; };
+					if ( !$chk || $chk !~ /^[.!?]$/ ) { # Do not insert a new sent in ?!?!?
+						$toklist .= "\n"; 
+						$newsent = 1;
+						$num = 0;
+					};
 				};
-				$num++;
+				$num++; $tn++;
 			};
 		};
 		utf8::upgrade($toklist);
@@ -409,7 +414,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 };
 
 sub parseconllu($fn) {
-	$fn = @_[0]; $tokcnt = 1; %tok = (); %mtok = (); %etok = (); %etok = (); %sent = (); $scnt=1; $mtokcnt=1; $prevdoc = "";
+	$fn = @_[0]; $tokcnt = 1; %tok = (); %mtok = (); %etok = (); %etok = (); %snts = (); $scnt=1; $mtokcnt=1; $prevdoc = "";
 	if ( $fn =~ /\/([a-z]+)_([a-z]+)-ud-([a-z]+).conllu/ ) { $lang = $1; $name = $2; $part = $3; };
 	$linex = ""; 
 
@@ -419,7 +424,7 @@ sub parseconllu($fn) {
 	while ( <FILE> ) {	
 		$line = $_; chop($line);
 		if ( $line =~ /# ?([a-z0-9A-Z\[\]¹_-]+) ?=? (.*)/ ) {
-			$sent{$1} = $2;
+			$snts{$1} = $2;
 		} elsif ( $line =~ /^(\d+)\t(.*)/ ) {
 			$tokcnt++;
 			@tmp = split ("\t", $line);
@@ -438,30 +443,41 @@ sub parseconllu($fn) {
 		} elsif ( $line =~ /^#/ ) {
 			# To do : ??	
 		} elsif ( $line eq '' ) {
-			putbacksent(%sent, %tok);
-			%tok = (); %mtok = ();  %etok = ();  %ord2id = ();  %sent = ();
+			putbacksent(%snts, %tok);
+			%tok = (); %mtok = ();  %etok = ();  %ord2id = ();  %snts = ();
 		} else {
 			print "What? ($line)"; 
 		};
 	};
 	if ( $debug ) { print "done reading back CoNLL-U output ($tokcnt tokens)"; };
-	if ( keys %sent ) { $linex .= putbacksent(%sent, %tok); }; # Add the last sentence if needed
+	if ( keys %snts ) { $linex .= putbacksent(%snts, %tok); }; # Add the last sentence if needed
 
 	return "";
 		
 };
 
-sub putbacksent($sent, $tok) {
-	( $sent, $tok ) = @_;
+sub putbacksent($snt, $tok) {
+	( $snt, $tok ) = @_;
 	
 	if ( !scalar $tok) { return; };
 	
 	$moresf = "";
-	while ( ( $key, $val ) = each (%sent) ) { 
-		$att = $key; $att =~ s/\[/_/g; $att =~ s/[^a-z_]//g;
-		if ( $att ne 'id' && $att ne '' ) { $moresf .= " $att=\"".textprotect($val)."\""; };
+	$sid = "s-".$scnt++;
+	if ( $mansent ) {
+		## Add the sentence into the XML
+		$nsnt = XML::LibXML::Element->new("s");
+		$nsnt->setAttribute("id", $sid);
 	};
-	$sentxml = "<s id=\"s-".$scnt++."\" $moresf>"; $dtokxml = "";
+	while ( ( $key, $val ) = each (%snt) ) { 
+		$att = $key; $att =~ s/\[/_/g; $att =~ s/[^a-z_]//g;
+		if ( $att ne 'id' && $att ne '' ) { 
+			$moresf .= " $att=\"".textprotect($val)."\""; 
+			if ( $nsnt ) {
+				$nsnt->setAttribute($att, $val);
+			};
+		};
+	};
+	$sentxml = "<s id=\"$sid\" $moresf>"; $dtokxml = "";
 	for ( $i=1; $i<=$tokmax; $i++ ) {
 		$tokline = textprotect($tok{$i});
 		( $word, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc ) = split("\t", $tokline ); 
@@ -472,11 +488,11 @@ sub putbacksent($sent, $tok) {
 				# Multiword
 			} else {
 				# DToks
-				$dtokxml = "<tok id=\"w-".$ord2id{$i}."\" ord=\"$i\" lemma=\"$mlemma\" upos=\"$mupos\" $xpostag=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
+				$dtokxml = "<dtok id=\"d-".$ord2id{$i}."\" ord=\"$i\" lemma=\"$mlemma\" upos=\"$mupos\" $xpostag=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
 			};
 		}		
 		if ( $dtokxml ) {
-			# Add a dtok
+			# Add a dtok (they do not occur, since UDPIPE does not split)
 		} else {	
 			foreach $mfld ( split('\|', $misc) ) {
 				if ( $mfld ne '_' && $mfld !~ /=/ ) {
@@ -487,6 +503,16 @@ sub putbacksent($sent, $tok) {
 			};
 			$tok = $tokhash{$tokid}; # Read from hash
 			if ( $tok ) {
+				if ( $nsnt) { 
+					if ( $i == 1 ) {
+						if ( $debug) { print "inserting ".$nsnt->toString; };
+						$tok->parentNode->insertBefore($nsnt, $tok);
+						$sameas = "#$tokid";
+					} else {
+						$sameas = "$sameas #$tokid";
+					};
+					$nsnt->setAttribute("sameAs", $sameas);
+				};
 				if ( $i ) { $tok->setAttribute('ord', $i); };
 				if ( $lemma && $lemma ne '_' ) { $tok->setAttribute('lemma', $lemma); };
 				if ( $upos && $upos ne '_') { $tok->setAttribute('upos', $upos); };
