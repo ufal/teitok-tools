@@ -18,6 +18,7 @@ GetOptions ( ## Command line options
             'nocheck' => \$nocheck, # assume all checks pass
             'writeback' => \$writeback, # write back to original file or put in new file
             'file=s' => \$file, # file to tag
+            'force' => \$force, # force even if alrady tagged
             'extfile=s' => \$extfile, # use an external file as parsed CoNLL-U
             'modfolder=s' => \$modfolder, # file to tag
             'model=s' => \$model, # which UDPIPE model to use
@@ -151,6 +152,11 @@ sub treatfile ( $fn ) {
 		# read the XML
 		if ( !$tokxp ) { $tokxp = "//$token"; };
 		( $reltokxp = $tokxp ) =~ s/(^| )\/\//\1.\/\//g;
+
+		if ( $rawxml =~ / upos=/ && !$force ) {
+			print "$fn: already parsed";
+			return -1;
+		};
 		
 		if ( $rawxml !~ /<\/$token>/  ) {
 			print "Not tokenized - tokenizing";
@@ -218,9 +224,10 @@ sub treatfile ( $fn ) {
 				$toklist .= "\n"; $num = 1;
 			};
 		} else {
-			$snum = 1; $mansent = 1;
+			$snum = 1; 
+			if ( !$xml->findnodes("//text//s") ) { $mansent = 1; };
 			$toklist = "# sent_id s-".$snum++."\n";
-			if ( !$pelms ) { $pelms = "p,head,tei_head,div,tei_div,speaker,u"; };
+			if ( !$pelms ) { $pelms = "p,head,tei_head,div,tei_div,speaker,u,text"; };
 			foreach $pelm ( split(",", $pelms) ) {
 				$pxp = "//text//$pelm\[.//tok]";
 				@ps = $xml->findnodes($pxp);
