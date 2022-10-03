@@ -220,6 +220,17 @@ sub treatfile ( $fn ) {
 		} else {
 			$snum = 1; $mansent = 1;
 			$toklist = "# sent_id s-".$snum++."\n";
+			if ( !$pelms ) { $pelms = "p,head,div,speaker,u"; };
+			foreach $pelm ( split(",", $pelms) ) {
+				$pxp = "//text//$pelm\[.//tok]";
+				@ps = $xml->findnodes($pxp);
+				foreach $pp ( @ps ) {
+					$ftok = $pp->findnodes(".//tok")->item(0);
+					$ftid = $ftok->getAttribute("id");
+					if ( $debug ) { print "First in $pelm: $ftid"; };
+					$pfirst{$ftid} = 1;
+				};
+			};
 			@atoks = $xml->findnodes($tokxp);
 			$tn = 0;
 			foreach $tok ( @atoks ) {
@@ -234,10 +245,13 @@ sub treatfile ( $fn ) {
 				if ( $tmp[1] =~ /^[.!?]$/ ) { 
 					$chk = ""; if ( $atoks[($tn+1)] ) { $chk = $atoks[($tn+1)]->textContent; };
 					if ( !$chk || $chk !~ /^[.!?]$/ ) { # Do not insert a new sent in ?!?!?
-						$toklist .= "\n"; 
 						$newsent = 1;
-						$num = 0;
 					};
+				};
+				if ( $pfirst{$tokid} ) { $newsent = 1; };
+				if ( $newsent ) {
+					$toklist .= "\n"; 
+					$num = 0;
 				};
 				$num++; $tn++;
 			};
