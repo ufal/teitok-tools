@@ -220,7 +220,7 @@ sub treatfile ( $fn ) {
 		} else {
 			$snum = 1; $mansent = 1;
 			$toklist = "# sent_id s-".$snum++."\n";
-			if ( !$pelms ) { $pelms = "p,head,div,speaker,u"; };
+			if ( !$pelms ) { $pelms = "p,head,tei_head,div,tei_div,speaker,u"; };
 			foreach $pelm ( split(",", $pelms) ) {
 				$pxp = "//text//$pelm\[.//tok]";
 				@ps = $xml->findnodes($pxp);
@@ -234,10 +234,15 @@ sub treatfile ( $fn ) {
 			@atoks = $xml->findnodes($tokxp);
 			$tn = 0;
 			foreach $tok ( @atoks ) {
+				$tokid = $tok->getAttribute('id').'';
+				if ( $pfirst{$tokid} ) { 
+					$toklist .= "\n"; 
+					$num = 1;
+					$newsent = 1; 
+				};
 				if ( $newsent ) { $toklist .= "# sent_id s-".$snum++."\n"; };
 				$newsent = 0;
 				$tokxml = parsetok($tok); 
-				$tokid = $tok->getAttribute('id').'';
 				$tokhash{$tokid} = $tok;
 				$toklist .= $tokxml;
 				@tmp = split("\t", $tokxml); 
@@ -248,7 +253,6 @@ sub treatfile ( $fn ) {
 						$newsent = 1;
 					};
 				};
-				if ( $pfirst{$tokid} ) { $newsent = 1; };
 				if ( $newsent ) {
 					$toklist .= "\n"; 
 					$num = 0;
