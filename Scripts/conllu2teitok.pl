@@ -103,9 +103,9 @@ sub makesent($sent, $tok) {
 			};
 		}		
 		if ( $dtokxml ) {
-			$dtokxml .= "<dtok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" $headf form=\"$word\"/>";			
+			$dtokxml .= "<dtok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohd=\"$head\" deps=\"$deps\" misc=\"$misc\" $headf form=\"$word\"/>";			
 		} else {
-			$tokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" $headf>$word</tok>";
+			$tokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohd=\"$head\" deps=\"$deps\" misc=\"$misc\" $headf>$word</tok>";
 			$tokxml =~ s/ [a-z]+="_"//g; # Remove empty attributes
 			$sentxml .= $tokxml;
 			if ( $misc !~ /SpaceAfter=No/ ) { $sentxml .= " "; }; # Add a space unless told not to
