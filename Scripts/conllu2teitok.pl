@@ -97,15 +97,15 @@ sub makesent($sent, $tok) {
 		if ( $mtok{$i} ) { 
 			( $mword, $mlemma, $mupos, $mxpos, $mfeats, $mhead, $mdeprel, $mdeps, $mmisc ) = split("\t", $mtok{$i}); 
 			if ( $mword =~ / / ) {
-				$sentxml .= "<mtok id=\"w-".$mtok++."\" form=\"$mword\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" oid=\"$i\" ohd=\"$head\" deps=\"$deps\" misc=\"$misc\" $mheadf>";			
+				$sentxml .= "<mtok id=\"w-".$mtok++."\" form=\"$mword\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" ord=\"$i\" ohead=\"$head\" deps=\"$deps\" misc=\"$misc\" $mheadf>";			
 			} else {
-				$dtokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
+				$dtokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$mlemma\" upos=\"$mupos\" xpos=\"$mxpos\" feats=\"$mfeats\" deprel=\"$mdeprel\" ord=\"$i\" ohead=\"$head\" deps=\"$mdeps\" misc=\"$mmisc\" $mheadf>$mword";			
 			};
 		}		
 		if ( $dtokxml ) {
-			$dtokxml .= "<dtok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohd=\"$head\" deps=\"$deps\" misc=\"$misc\" $headf form=\"$word\"/>";			
+			$dtokxml .= "<dtok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohead=\"$head\" ord=\"$i\" deps=\"$deps\" misc=\"$misc\" $headf form=\"$word\"/>";			
 		} else {
-			$tokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohd=\"$head\" deps=\"$deps\" misc=\"$misc\" $headf>$word</tok>";
+			$tokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohead=\"$head\" ord=\"$i\" misc=\"$misc\" $headf>$word</tok>";
 			$tokxml =~ s/ [a-z]+="_"//g; # Remove empty attributes
 			$sentxml .= $tokxml;
 			if ( $misc !~ /SpaceAfter=No/ ) { $sentxml .= " "; }; # Add a space unless told not to
