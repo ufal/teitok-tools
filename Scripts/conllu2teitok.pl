@@ -6,32 +6,31 @@ $scriptname = $0;
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
-            'file=s' => \$filename, # which UDPIPE model to use
-            'output=s' => \$output, # which UDPIPE model to use
+            'verbose' => \$debug, # debugging mode
+            'file=s' => \$filename, # filename of the file to convert
+            'output=s' => \$output, # filename of the output
+            'outfolder=s' => \$outfolder, # filename of the output
             'morerev=s' => \$morerev, # language of input
-            'split' => \$split, # Split into 1 file per language
+            'split' => \$split, # Split into 1 file per # newdoc
             );
 
 $\ = "\n"; $, = "\t";
 
 if ( !$filename ) { $filename = shift; };
 ( $basename = $filename ) =~ s/.*\///; $basename =~ s/\..*//;
-if ( !$output ) { $output = $basename.".xml"; };
+if ( !$outfolder && -e "xmlfiles" ) { $outfolder = "xmlfiles"; };
+if ( !$output && $outfolder ) { $output = $outfolder."/".$basename.".xml"; };
+if ( !$output && -e "xmlfiles" ) { $output = $basename.".xml"; };
+if ( $outfolder ) { `mkdir -p $outfolder`; };
 
 $teixml = conllu2tei($filename);
 
-print "Writing output to $output";
-open OUTFILE, ">$output";
-print OUTFILE "<TEI>
-<teiHeader>
-	<notesStmt><note n=\"orgfile\">$basename.conllu</note></notesStmt>
-	<revisionDesc><change who=\"conllu2teitok\" when=\"$now\">Converted from CoNLL-U $filename</change></revisionDesc>
-</teiHeader>
-<text>
-$teixml
-</text>
-</TEI>";
-close OUTFILE;
+if ( $split && $indoc ) { 
+	$output = $outfolder."/".$indoc;  
+	if ( substr($output, -4) ne '.xml' ) { $output .= ".xml"; };
+};
+writeit($output, $linex);
+
 
 sub conllu2tei($fn) {
 	$fn = @_[0]; $tokcnt = 1; %tok = (); %mtok = (); %etok = (); %etok = (); %sent = (); $scnt=1; $mtokcnt=1; $prevdoc = "";
@@ -44,9 +43,20 @@ sub conllu2tei($fn) {
 		$line = $_; chop($line);
 		if ( $line =~ /# newdoc id = (.*)/ || $line =~ /# newdoc/ ) {
 			if ( $inpar ) { $linex .= "</p>\n"; $inpar = 0; }; # A new document always closes the paragraph
-			if ( $indoc ) { $linex .= "</doc>\n"; $indoc = 0; }; # A new document always closes the paragraph
-			$linex .= "<doc>\n"; 
-			$indoc = $1 or $indoc = "doc$doccnt";
+			if ( $split ) {
+				if ( $indoc ) { 
+					$outfile = $outfolder."/".$indoc;
+					if ( substr($outfile, -4) ne '.xml' ) { $outfile .= ".xml"; };
+					writeit($outfile, $linex); 
+					$linex = "";
+					$indoc = 0; 
+				}; # A new document always closes the paragraph
+				$indoc = $1 or $indoc = "doc$doccnt";
+			} else {
+				if ( $indoc ) { $linex .= "</doc>\n"; $indoc = 0; }; # A new document always closes the paragraph
+				$linex .= "<doc>\n"; 
+				$indoc = $1 or $indoc = "doc$doccnt";
+			};
 			$doccnt++;
 		} elsif ( $line =~ /# newpar id = (.*)/ || $line =~ /# newpar/ ) {
 			if ( $inpar ) { $linex .= "</p>\n"; };
@@ -73,7 +83,7 @@ sub conllu2tei($fn) {
 	};
 	if ( keys %sent ) { $linex .= makesent(%sent, %tok); }; # Add the last sentence if needed
 	if ( $inpar ) { $linex .= "</p>\n"; };
-	if ( $indoc ) { $linex .= "</doc>\n"; };
+	if ( !$split && $indoc ) { $linex .= "</doc>\n"; };
 
 	return $linex;
 		
@@ -135,4 +145,20 @@ sub textprotect ( $text ) {
 	$text =~ s/"/&#039;/g;
 
 	return $text;
+};
+
+sub writeit($outfile = $output) {
+	( $outfile, $teixml ) = @_;
+	print "Writing output to $outfile";
+	open OUTFILE, ">$outfile";
+	print OUTFILE "<TEI>
+	<teiHeader>
+		<notesStmt><note n=\"orgfile\">$basename.conllu</note></notesStmt>
+		<revisionDesc><change who=\"conllu2teitok\" when=\"$now\">Converted from CoNLL-U $filename</change></revisionDesc>
+	</teiHeader>
+	<text>
+	$teixml
+	</text>
+	</TEI>";
+	close OUTFILE;
 };
