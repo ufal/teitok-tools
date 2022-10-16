@@ -42,7 +42,9 @@ sub conllu2tei($fn) {
 	while ( <FILE> ) {	
 		$line = $_; chop($line);
 		if ( $line =~ /# newdoc id = (.*)/ || $line =~ /# newdoc/ ) {
-			if ( $debug ) { print " - begin of newdoc $1 ; $line"; };
+			$indoc = $1 or $indoc = "doc$doccnt";
+			$indoc =~ s/\//_/g;
+			if ( $debug ) { print " - begin of newdoc $indoc ; $line"; };
 			if ( $inpar ) { $linex .= "</p>\n"; $inpar = 0; }; # A new document always closes the paragraph
 			if ( $split ) {
 				if ( $indoc ) { 
@@ -50,13 +52,11 @@ sub conllu2tei($fn) {
 					if ( substr($outfile, -4) ne '.xml' ) { $outfile .= ".xml"; };
 					writeit($outfile, $linex); 
 					$linex = "";
-					$indoc = 0; 
 				}; # A new document always closes the paragraph
 				$indoc = $1 or $indoc = "doc$doccnt";
 			} else {
-				if ( $indoc ) { $linex .= "</doc>\n"; $indoc = 0; }; # A new document always closes the paragraph
-				$linex .= "<doc>\n"; 
-				$indoc = $1 or $indoc = "doc$doccnt";
+				if ( $indoc ) { $linex .= "</doc>\n"; }; # A new document always closes the paragraph
+				$linex .= "<doc id=\"$indoc\">\n"; 
 			};
 			$doccnt++;
 		} elsif ( $line =~ /# newpar id = (.*)/ || $line =~ /# newpar/ ) {
