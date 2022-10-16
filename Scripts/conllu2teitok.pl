@@ -29,7 +29,7 @@ if ( $split && $indoc ) {
 	$output = $outfolder."/".$indoc;  
 	if ( substr($output, -4) ne '.xml' ) { $output .= ".xml"; };
 };
-writeit($output, $linex);
+writeit($output, $linex); # Write out (the remaining) XML lines
 
 
 sub conllu2tei($fn) {
@@ -42,6 +42,7 @@ sub conllu2tei($fn) {
 	while ( <FILE> ) {	
 		$line = $_; chop($line);
 		if ( $line =~ /# newdoc id = (.*)/ || $line =~ /# newdoc/ ) {
+			if ( $debug ) { print " - begin of newdoc $1 ; $line"; };
 			if ( $inpar ) { $linex .= "</p>\n"; $inpar = 0; }; # A new document always closes the paragraph
 			if ( $split ) {
 				if ( $indoc ) { 
