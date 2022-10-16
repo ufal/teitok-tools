@@ -53,7 +53,6 @@ sub conllu2tei($fn) {
 					writeit($outfile, $linex); 
 					$linex = "";
 				}; # A new document always closes the paragraph
-				$indoc = $1 or $indoc = "doc$doccnt";
 			} else {
 				if ( $indoc ) { $linex .= "</doc>\n"; }; # A new document always closes the paragraph
 				$linex .= "<doc id=\"$indoc\">\n"; 
