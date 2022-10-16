@@ -29,6 +29,7 @@ if ( $split && $indoc ) {
 	$output = $outfolder."/".$indoc;  
 	if ( substr($output, -4) ne '.xml' ) { $output .= ".xml"; };
 };
+if ( $debug ) { print " - wrtinging (remaining) XML: $indoc"; };
 writeit($output, $linex); # Write out (the remaining) XML lines
 
 
@@ -52,9 +53,9 @@ sub conllu2tei($fn) {
 					if ( substr($outfile, -4) ne '.xml' ) { $outfile .= ".xml"; };
 					writeit($outfile, $linex); 
 					$linex = "";
-				}; # A new document always closes the paragraph
+				}; 
 			} else {
-				if ( $indoc ) { $linex .= "</doc>\n"; }; # A new document always closes the paragraph
+				if ( $indoc ) { $linex .= "</doc>\n"; }; 
 				$linex .= "<doc id=\"$indoc\">\n"; 
 			};
 			$doccnt++;
