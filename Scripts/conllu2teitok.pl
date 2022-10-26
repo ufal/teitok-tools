@@ -29,8 +29,7 @@ if ( $split && $indoc ) {
 	$output = $outfolder."/".$indoc;  
 	if ( substr($output, -4) ne '.xml' ) { $output .= ".xml"; };
 };
-if ( $debug ) { print " - wrtinging (remaining) XML: $indoc"; };
-writeit($output, $linex); # Write out (the remaining) XML lines
+writeit($output, $teixml); # Write out (the remaining) XML lines
 
 
 sub conllu2tei($fn) {
@@ -43,8 +42,9 @@ sub conllu2tei($fn) {
 	while ( <FILE> ) {	
 		$line = $_; chop($line);
 		if ( $line =~ /# newdoc id = (.*)/ || $line =~ /# newdoc/ ) {
-			$indoc = $1 or $indoc = "doc$doccnt";
-			$indoc =~ s/\//_/g;
+			$doccnt++;
+			$newdoc = $1 or $newdoc = "doc$doccnt";
+			$newdoc =~ s/\//_/g;
 			if ( $debug ) { print " - begin of newdoc $indoc ; $line"; };
 			if ( $inpar ) { $linex .= "</p>\n"; $inpar = 0; }; # A new document always closes the paragraph
 			if ( $split ) {
@@ -58,7 +58,7 @@ sub conllu2tei($fn) {
 				if ( $indoc ) { $linex .= "</doc>\n"; }; 
 				$linex .= "<doc id=\"$indoc\">\n"; 
 			};
-			$doccnt++;
+			$indoc = $newdoc;
 		} elsif ( $line =~ /# newpar id = (.*)/ || $line =~ /# newpar/ ) {
 			if ( $inpar ) { $linex .= "</p>\n"; };
 			$linex .= "<p org_id=\"$1\">\n"; 

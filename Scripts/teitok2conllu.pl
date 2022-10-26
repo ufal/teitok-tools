@@ -297,7 +297,7 @@ sub parsetok($tk) {
 		if ( $longid ) { 
 			$misc .= $tokid; 
 		} else {
-			$misc .= "tok_id=".$tokid; 
+			$misc .= "tokId=".$tokid; 
 		};
 		
 		# fallback
@@ -320,7 +320,7 @@ sub parsetok($tk) {
 		if ( $longid ) { 
 			$misc .= $tokid; 
 		} else {
-			$misc .= "tok_id=".$tokid; 
+			$misc .= "tokId=".$tokid; 
 		};
 
 		if ( $word eq '' ) { $word = "_"; };
@@ -355,7 +355,7 @@ sub parsetok($tk) {
 		if ( $longid ) { 
 			$misc .= $tokid; 
 		} else {
-			$misc .= "tok_id=".$tokid; 
+			$misc .= "tokId=".$tokid; 
 		};
 
 		# fallback
