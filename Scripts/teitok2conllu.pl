@@ -144,26 +144,30 @@ if ( $sents ) {
 
 		if ( !$norepair ) {
 			# Check for loops
+			$headed = 0;
 			$tree = $parser->load_xml(string => "<s/>");
 			undef(%nodes); undef(%id2tok); undef($rootid); undef($unrootid); undef($root);
 			foreach $tok ( @toks ) {
 				$tokid =  $tok->getAttribute("id");
 				$id2tok{$tokid} = $tok;
 				$nodes{$tokid} = $tree->createElement("tok");
+				if ( $tok->getAttribute("head") ) {
+					$headed = 1;
+				};
 				if ( $tok->getAttribute("deprel")."" eq "root" ) {
 					if  ( !$rootid ) { $rootid = $tokid; };
 				} elsif ( !$tok->getAttribute("head") || $tok->getAttribute("head")."" eq ""  ) {
 					$unrootid = $tokid;
 				}; 
 			}; 
-			if ( !$rootid && $unrootid ) { 
+			if ( $headed && !$rootid && $unrootid ) { 
 				if ( $verbose ) { print "No explicit root - using unheaded $unrootid"; };
 				if ( $id2tok{$unrootid} ) {
 					$id2tok{$unrootid}->setAttribute("deprel", "root");
 				};
 				$rootid = $unrootid; 
 			};
-			if ( !$rootid ) { 
+			if ( $headed && !$rootid ) { 
 				$tmp = $toks[0]; 
 				while  ( $tmph = $tmp->getAttribute("head") && $id2tok{$tmph} ) {
 					$tmp = $id2tok{$tmph};
@@ -172,6 +176,7 @@ if ( $sents ) {
 				if ( $verbose ) { print "No root element found in $sentid - setting to $rootid"; };
 			} elsif ( $debug  ) { print "Root ID: $rootid"; };
 				
+			if ( $headed ) {
 			foreach $tok ( @toks ) {
 				$tokid =  $tok->getAttribute("id")."";
 				$headid =  $tok->getAttribute("head")."";
@@ -205,7 +210,7 @@ if ( $sents ) {
 					};
 					$tree->firstChild->addChild($nodes{$tokid});
 				};
-			};
+			}; };
 		};
 		foreach $tok ( @toks ) {
 			$sentlines .= parsetok($tok);
