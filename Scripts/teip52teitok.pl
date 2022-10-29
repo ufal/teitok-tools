@@ -56,7 +56,11 @@ if ( !$doc ) {
 	print "Invalid XML in $filename"; 
 	if ( $debug ) {
 		print $@;
-		if ( $debug > 2 ) { print $raw; };
+		print "Incorrect file has been written to /tmp/wrong.xml";
+		open FILE, ">/tmp/wrong.xml";
+		binmode (FILE, ":utf8");
+		print FILE $raw;
+		close FILE;
 	};
 	exit; 
 };
