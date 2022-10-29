@@ -57,7 +57,6 @@ if ( !$doc ) {
 	if ( $debug ) {
 		print $@;
 		if ( $debug > 2 ) { print $raw; };
-		print $raw;
 	};
 	exit; 
 };
