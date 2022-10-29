@@ -4,6 +4,7 @@ use POSIX qw(strftime);
 use File::Find;
 use LWP::Simple;
 use LWP::UserAgent;
+use HTML::Entities;
 use JSON;
 use XML::LibXML;
 use Encode;
@@ -15,8 +16,8 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'writeback' => \$writeback, # write back to original file or put in new file
-            'output=s' => \$output, # which UDPIPE model to use
-            'file=s' => \$filename, # which UDPIPE model to use
+            'output=s' => \$output, # the name of the TEITOK output file
+            'file=s' => \$filename, # the name of the TEI P5 input file
             'folder=s' => \$folder, # Originals folder
             );
 
@@ -40,6 +41,13 @@ $raw =~ s/xml:id=/id=/g;
 $raw =~ s/<tei:/</g;
 $raw =~ s/<\/tei:/<\//g;
 
+# Reencode any HTML encoded data
+while ( $raw =~ /(\&[a-z]+;)/g ) {
+	$char = $1; $enc = decode_entities($char); $ord = ord($enc); $uenc = "&#$ord;";
+	if ( $char eq '&gt;' || $char eq '&lt;' || $char eq '&amp;') { next; }
+	$raw =~ s/$char/$uenc/;
+}; 
+
 $parser = XML::LibXML->new(); $doc = "";
 eval {
 	$doc = $parser->load_xml(string => $raw);
@@ -48,8 +56,7 @@ if ( !$doc ) {
 	print "Invalid XML in $filename"; 
 	if ( $debug ) {
 		print $@;
-	};
-	if ( $debug > 2 ) {
+		if ( $debug > 2 ) { print $raw; };
 		print $raw;
 	};
 	exit; 
