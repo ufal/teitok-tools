@@ -35,11 +35,19 @@ binmode (FILE, ":utf8");
 $raw = <FILE>;
 close FILE;
 
+# Fill the namespace
 $raw =~ s/xmlns:/xmlnsoff_/g;
 $raw =~ s/xmlns=/xmlnsoff=/g;
 $raw =~ s/xml:id=/id=/g;
 $raw =~ s/<tei:/</g;
 $raw =~ s/<\/tei:/<\//g;
+
+# Fill the document description
+$raw =~ s/<TEI\.2/<TEI/g;
+$raw =~ s/<\/TEI\.2/<\/TEI/g;
+while ( $raw !~ /^<TEI/ ) {
+	$raw =~ s/(^.*\n)//;
+};
 
 # Reencode any HTML encoded data
 while ( $raw =~ /(\&[a-z]+;)/g ) {
