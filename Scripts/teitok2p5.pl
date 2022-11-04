@@ -14,6 +14,7 @@ $scriptname = $0;
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
+            'test' => \$test, # test mode - output to STDOUT
             'verbose' => \$verbose, # debugging mode
             'writeback' => \$writeback, # write back to original file or put in new file
             'output=s' => \$output, # which UDPIPE model to use
@@ -37,7 +38,8 @@ foreach $tk ( $doc->findnodes("//text") ) {
 	$tk->removeAttribute('xml:space');
 };
 
-@tokatts = ('xml:id', 'lemma', 'msd', 'pos');
+@tokatts = ('xml:id', 'lemma', 'msd', 'pos', 'join');
+@handled = ('ord', 'head', 'ohead', 'deprel');
 
 # Convert <dtok> to <tok> (to be dealt with later)
 foreach $tk ( $doc->findnodes("//text//tok[dtok]") ) {
@@ -117,6 +119,17 @@ foreach $node ( $doc->findnodes("//ee") ) {
 # Convert <tok> to <w> and <pc>
 $tcnt = 0;
 foreach $tk ( $doc->findnodes("//text//tok") ) {
+
+	$tkid =  $tk->getAttribute('id') or $tkid =  $tk->getAttribute('xml:id') ;
+
+	# Add @join
+	undef($tkp); $tmp = $tk; $join = 0;
+	if ( !$tk->nextSibling() ) { while ( $tmp->parentNode() &&  $tmp->parentNode()->getName() ne 's' ) { $tkp = $tmp->parentNode(); $tmp = $tkp; }; };
+	if ( $tk->nextSibling() && $tk->nextSibling()->getName() eq "tok" ) { 
+		$join = 1; 
+	} elsif ( $tkp && $tkp->nextSibling() && $tkp->nextSibling()->getName() eq "tok" ) { $join = 1; };
+	if ( $join ) { $tk->setAttribute("join", "right"); };
+
 	$wpc = "w";
 	if ( $tk->getAttribute('upos') ) {
 		if ( $tk->getAttribute('upos') eq 'PUNCT' ) { $wpc = "pc"; };
@@ -125,6 +138,7 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 		if ( $word =~ /^\p{isPunct}+$/ ) { $wpc = "pc"; };
 	};
 	$tk->setName($wpc);
+
 	
 	if ( $tk->getAttribute('upos') ) {
 		# Convert CoNNL-U to msd
@@ -150,8 +164,7 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 		};
 		$link = $doc->createElement( 'link' );
 		$link->setAttribute('ana', 'ud-syn:'.$tk->getAttribute('deprel'));
-		$tid = $tk->getAttribute('id') or $tid =  $tk->getAttribute('xml:id');
-		$link->setAttribute('target', '#'.$tid.' '.'#'.$tk->getAttribute('head'));
+		$link->setAttribute('target', '#'.$tkid.' '.'#'.$tk->getAttribute('head'));
 		$lnkgrp->addChild($link);
 		
 	};
@@ -196,9 +209,16 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 	foreach $att ( $tk->attributes() ) {
 		$attname = $att->getName();
 		if ( !grep /^$attname$/, @tokatts ) {
+			if ( $debug && !grep /^$attname$/, @handled ) { 
+				print "Removing invalid attribute for $tkid: $attname = ".$att->value;
+			};
 			$tk->removeAttribute($attname);
 		};
 	};
+
+	if ( $debug ) {
+ 			print $tk->toString;
+ 	};
 		
 };
 
@@ -253,6 +273,11 @@ $revnode->appendText("Converted from TEITOK file $basename.xml");
 $doc->findnodes("/TEI")->item(0)->setAttribute('xmlns', 'http://www.tei-c.org/ns/1.0');
 $doc->findnodes("/TEI")->item(0)->removeAttribute('xmlnsoff');
 
+if ( $test ) {
+	print  $doc->toString(1);	
+	exit;
+};
+
 if ( $writeback ) { 
 	$output = $filename;
 	`mv $orgfile $orgfile.teitok`;
@@ -267,7 +292,7 @@ eval {
 if ( $tmp2 ) { $doc = $tmp2; } elsif ($debug && $tmp ne $outputxml) { print "could not convert tei_"; };
 if ( $verbose ) { print "Writing converted file to $output\n"; };
 open OUTFILE, ">$output";
-print OUTFILE $doc->toString;	
+print OUTFILE $doc->toString(1);	 # TODO - indentation does not work since parser did not (and cannot) use no_blanks
 close OUTFLE;
 
 sub makenode ( $xml, $xquery ) {
