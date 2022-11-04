@@ -129,7 +129,7 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 	if ( $tk->getAttribute('upos') ) {
 		# Convert CoNNL-U to msd
 		$msd = 'UposTag='.$tk->getAttribute('upos');
-		if ( $tk->getAttribute('feats') ne '_') { $msd .= '|'.$tk->getAttribute('feats'); };
+		if ( $tk->getAttribute('feats') ne '_' & $tk->getAttribute('feats') ne '' ) { $msd .= '|'.$tk->getAttribute('feats'); };
 		$tk->setAttribute('msd', $msd);
 		$tk->removeAttribute('upos');
 		$tk->removeAttribute('feats');
@@ -150,7 +150,8 @@ foreach $tk ( $doc->findnodes("//text//tok") ) {
 		};
 		$link = $doc->createElement( 'link' );
 		$link->setAttribute('ana', 'ud-syn:'.$tk->getAttribute('deprel'));
-		$link->setAttribute('target', '#'.$tk->getAttribute('id').' '.'#'.$tk->getAttribute('head'));
+		$tid = $tk->getAttribute('id') or $tid =  $tk->getAttribute('xml:id');
+		$link->setAttribute('target', '#'.$tid.' '.'#'.$tk->getAttribute('head'));
 		$lnkgrp->addChild($link);
 		
 	};

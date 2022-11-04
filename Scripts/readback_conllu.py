@@ -7,6 +7,7 @@ def getval(node, attr):
 	return ""
 
 concols = ['ord', 'form', 'lemma', 'upos', 'xpos', 'feats', 'ohead', 'deprel', 'dep', 'misc']
+
 	
 def readback(filename):
 	
@@ -17,6 +18,22 @@ def readback(filename):
 	if "verbose" in cargs.keys():
 		print("Reading back conllu file: " + infile)
 	xmlf = etree.parse(filename)
+
+	annid = 1;
+	spans = xmlf.findall("//{*}span")
+	if spans is not None:
+		for span in spans:
+			spanid = span.get('id')
+			if spanid[0:4] == "ann-":
+				thisid = int(spanid[4:])
+				if thisid >= annid:
+					annid = thisid + 1
+
+	nerxml = xmlf.find("//{*}spanGrp[@type=\"entities\"]")
+	firstann = annid
+	if nerxml is None:
+		nerxml = etree.Element("spanGrp")
+		nerxml.set("type", "entities")	
 	
 	# Deal with NameSpace if needed
 	xmlns = xmlf.getroot().nsmap
@@ -37,6 +54,7 @@ def readback(filename):
 		print("Token XPath: " + tokxp)
 	
 	toks = {}
+	nes = {}
 	id2ord = {}
 	ord2id = {}
 	docend = -1
@@ -62,32 +80,60 @@ def readback(filename):
 					continue
 				thead = ord2id[ohead]
 				tok.attrib['head'] = thead
+			for j in nes:
+				ne = nes[j]
+				if "debug" in cargs.keys():
+					print("Named Entity " + j + ": " + str(ne))
+				for i in ne["ords"]:
+					corresp = " #" + ord2id[i]
+				corresp = corresp[1:]
+				annelm = nerxml.find(".//{*}span[@corresp=\""+corresp+"\"]")
+				if annelm is None:
+					annelm = etree.Element("span")
+					annelm.set("id", "ann-"+str(annid))
+					annid = annid + 1
+					annelm.tail = "\n"
+					nerxml.append(annelm)
+				annelm.set("type", ne["type"])
+				annelm.set("corresp", corresp)
 			id2ord = {}
 			ord2id = {}
+			nes = {}
 		elif data[0:1] == "#":
 			# Metadata or comment line
 			continue
 		else:
 			flds = data.split("\t")
 			misc = flds[9].split('|')
+			ord = flds[0]
 			tokid = ""
 			join = ""
 			for mf in misc:
-				if mf[0:6] == "tokId=":
-					tokid = mf[6:]
-				elif mf[0:7] == "tok_id=":
-					tokid = mf[7:]
-				elif mf == "SpaceAfter=No":
-					join = "right"
+				mfa = mf.split("=")
+				if mfa[0] == "tokId" or mfa[0] == "tok_id":
+					# TEITOK style token ID
+					tokid = mfa[1]
+				if mfa[0] == "NE":
+					# CoNLL-U+NE style Named Entity
+					tmp = mfa[1].split("_")
+					if not tmp[1] in nes.keys():
+						nes[tmp[1]] = {"type": tmp[0], "ords": [ord] }
+					else:
+						nes[tmp[1]]["ords"].append(ord)
 				elif not "=" in mf:
+					# Old TEITOK style token ID
 					tokid = mf
 			if tokid == "":
 				if "debug" in cargs.keys():
 					print("Token line without a tokid: " + data)
 				continue
+			if not tokid in toks.keys():
+				if "debug" in cargs.keys():
+					print("Unknown tokid: " + tokid)
+				continue
 			tok = toks[tokid]
-			id2ord[tokid] = flds[0]
-			ord2id[flds[0]] = tokid
+			id2ord[tokid] = ord
+			ord2id[ord] = tokid
 			
 			# Check that this is the right word
 			cform = flds[1]
