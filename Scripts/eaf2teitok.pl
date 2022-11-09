@@ -57,6 +57,27 @@ $doc->firstChild->appendChild($header);
 $text = XML::LibXML::Element->new( "text" );
 $doc->firstChild->appendChild($text);
 
+# Check the media file 
+foreach $node ( $eaf->findnodes("//MEDIA_DESCRIPTOR") ) {
+	$mediaurl = $node->getAttribute('MEDIA_URL');
+	$mediaurl =~ s/^\.\///;
+	if ( substr($mediaurl,0,5) eq 'file:' ) {
+		$mediaurl =~ s/.*\///;
+	};
+	
+	if ( !$recs ) { $recs = XML::LibXML::Element->new( "recordingStmt" ); $header->appendChild($recs); };
+	$newrec = XML::LibXML::Element->new( "recording" );
+	$recs->appendChild($newrec);
+	$newmedia = XML::LibXML::Element->new( "media" );
+	$newrec->appendChild($newmedia);
+	$newmedia->setAttribute("url", $mediaurl);
+
+	$mime = $node->getAttribute('MIME_TYPE');
+	if ( $mime ) { 
+		$newmedia->setAttribute("mimeType", $mime);
+	};
+};
+
 # Read the timeline elements
 foreach $node ( $eaf->findnodes("//TIME_ORDER/TIME_SLOT") ) {
 	$key = $node->getAttribute("TIME_SLOT_ID")."";

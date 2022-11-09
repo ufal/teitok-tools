@@ -28,6 +28,8 @@ if ( !$filename ) { $filename = shift; };
 ( $basename = $filename ) =~ s/.*\///; $basename =~ s/\..*//;
 if ( !$output ) { $output = $basename."-p5.xml"; };
 
+if ( $debug ) { $verbose = 1; };
+
 $parser = XML::LibXML->new(); $doc = "";
 eval {
 	$doc = $parser->load_xml(location => $filename);
@@ -36,6 +38,10 @@ if ( !$doc ) { print "Invalid XML in $filename"; exit; };
 
 foreach $tk ( $doc->findnodes("//text") ) {
 	$tk->removeAttribute('xml:space');
+};
+
+if ( $verbose ) {
+	print "Converting $filename to TEI P5";
 };
 
 @tokatts = ('xml:id', 'lemma', 'msd', 'pos', 'join');
@@ -62,7 +68,6 @@ foreach $tk ( $doc->findnodes("//text//tok[dtok]") ) {
 	print $tk->toString; exit;
 	};
 };
-
 
 # Convert bbox  to <surface> elements
 $pcnt = 1; 
@@ -121,6 +126,7 @@ $tcnt = 0;
 foreach $tk ( $doc->findnodes("//text//tok") ) {
 
 	$tkid =  $tk->getAttribute('id') or $tkid =  $tk->getAttribute('xml:id') ;
+	$id2tok{$tkid} = $tk;
 
 	# Add @join
 	undef($tkp); $tmp = $tk; $join = 0;
@@ -263,6 +269,19 @@ foreach $time ( @timeline ) {
 	
 };};
 
+# Deal with span groups
+foreach $spans ( $doc->findnodes("//spanGrp") ) {
+	if ( $spans->getAttribute("type") eq "entities" ) {
+		# NER spanGrp - turn into <name>s
+		if ( $debug ) { print "NER -> <name>"; };
+		foreach $span ( $spans->findnodes(".//span") ) {
+			$tmp = makeparent($span, "name", "corresp");
+			if ( $tmp ) { $spans->removeChild($span); };
+		};
+		if ( !$spans->nonBlankChildNodes ) { $spans->parentNode->removeChild($spans); };
+	};
+};
+
 # Add the revision statement
 $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"teitok2p5\"]");
 $when = strftime "%Y-%m-%d", localtime;
@@ -297,13 +316,18 @@ close OUTFLE;
 
 sub makenode ( $xml, $xquery ) {
 	my ( $xml, $xquery ) = @_;
+	if ( !$xquery ) { 
+		if ( $debug ) { print "Oops - empty query"; };
+		return -1; 
+	};
+	
 	@tmp = $xml->findnodes($xquery); 
 	if ( scalar @tmp ) { 
 		$node = shift(@tmp);
 		if ( $debug ) { print "Node exists: $xquery"; };
 		return $node;
 	} else {
-		if ( $xquery =~ /^(.*)\/(.*?)$/ ) {
+		if ( $xquery =~ /^(.+)\/(.*?)$/ ) {
 			my $parxp = $1; my $thisname = $2;
 			my $parnode = makenode($xml, $parxp);
 			$thisatts = "";
@@ -332,3 +356,32 @@ sub makenode ( $xml, $xquery ) {
 	};
 };
 
+sub makeparent ( $node, $type, $idatt ) {
+	( $node, $type, $idatt ) = @_;
+	$ids = $node->getAttribute($idatt);
+	$ids =~ s/#//g;
+	if ( $ids eq '' ) { return 0; };
+	@idlist = split(" ", $ids);
+	$tok1 = $id2tok{$idlist[0]};
+	$tok2 = $id2tok{$idlist[-1]};
+	if ( !$tok1 || !$tok2 ) {
+		if ( $verbose ) { print "Not a valid set of tokens: $ids"; };
+		return 0;
+	}
+	if ( $tok1->parentNode != $tok2->parentNode ) {
+		if ( $verbose ) { print "Not part of the same element: $ids"; } ;
+		return 0;
+	}
+	$node->setName($type);
+	$tok1->parentNode->insertBefore($node, $tok1);
+	$tomove = $tok1;
+	while ( $tomove->nextSibling ) {
+		$next = $tomove->nextSibling;
+		$node->addChild($tomove);
+		if ( $tomove == $tok2 ) { last; }
+		$tomove = $next;
+		if ( !$tomove ) { last; }
+	};
+	if ( $debug ) { print $node->toString; };
+	return 1;
+};
