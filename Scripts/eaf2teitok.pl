@@ -12,6 +12,7 @@ GetOptions ( ## Command line options
             'output=s' => \$output, # output file
             'morerev=s' => \$morerev, # language of input
             'nospace' => \$nospace, # convert to whitespace-sensitive XML
+            'nowho' => \$nowho, # do no put @who on utterances
             );
 
 $\ = "\n"; $, = "\t";
@@ -88,6 +89,7 @@ foreach $node ( $eaf->findnodes("//TIME_ORDER/TIME_SLOT") ) {
 };
 
 # Read the tiers
+@speakers = ();
 foreach $tier ( $eaf->findnodes("//TIER") ) {
 	$who = $tier->getAttribute("PARTICIPANT");
 	$tierid = $tier->getAttribute("TIER_ID");
@@ -102,6 +104,7 @@ foreach $tier ( $eaf->findnodes("//TIER") ) {
 	if ( !$who ) { $who = $tierid; };
 	$annname = $tierid; $annname =~ s/[^a-zA-Z0-9]//g;
 	if ( $debug ) { print "tier: $who, $tierid"; };
+	$somedone = 0;
 	foreach $annotation ( $tier->findnodes("./ANNOTATION/ALIGNABLE_ANNOTATION") ) {
 		$annid = $annotation->getAttribute("ANNOTATION_ID")."";	
 		$start = $annotation->getAttribute("TIME_SLOT_REF1")."";	
@@ -114,6 +117,7 @@ foreach $tier ( $eaf->findnodes("//TIER") ) {
 		$anns{$annid}{'end'} = $end;	
 		$anns{$annid}{'text'} = $txt;
 		if ( $debug ) { print "$annid: $start-$end = $txt"; };
+		$somedone = 1;
 	};
 	foreach $annotation ( $tier->findnodes("./ANNOTATION/REF_ANNOTATION") ) {
 		$annid = $annotation->getAttribute("ANNOTATION_ID")."";	
@@ -122,7 +126,12 @@ foreach $tier ( $eaf->findnodes("//TIER") ) {
 		$anns{$annref}{'refs'}{$annname} = $txt;	
 		if ( $debug ) { print "$annref: $annname = $txt"; };
 	};
+	if ( $somedone && !$parent ) { 
+		push(@speakers, $who);
+	};
 };
+
+if ( length(@speakers) == 1 ) {  $nowho = 1; };
 
 # Write the utterances
 foreach my $key (sort {$a <=> $b} keys %utts) {
@@ -146,7 +155,9 @@ foreach my $key (sort {$a <=> $b} keys %utts) {
 			print $putt->toString;
 		} else {
 			$utt = XML::LibXML::Element->new( "u" );
-			$utt->setAttribute("who", $ann->{'who'});
+			if ( !$nowho ) {
+				$utt->setAttribute("who", $ann->{'who'});
+			};
 			$utt->setAttribute("start", $key/1000);
 			$utt->setAttribute("end", $i2t{$ann->{'end'}}/1000);
 			$utt->appendText($ann->{'text'});
