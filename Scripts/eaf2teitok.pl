@@ -91,6 +91,15 @@ foreach $node ( $eaf->findnodes("//TIME_ORDER/TIME_SLOT") ) {
 foreach $tier ( $eaf->findnodes("//TIER") ) {
 	$who = $tier->getAttribute("PARTICIPANT");
 	$tierid = $tier->getAttribute("TIER_ID");
+	$parent = $tier->getAttribute("PARENT_REF");
+	if ( $parent ) {
+		$prnt{$tierid} = $parent;
+		$chln{$parent} .= "$tierid;";
+		if ( $debug ) {
+			print "Depenent tier: $tierid => $parent";
+		};
+	};
+	if ( !$who ) { $who = $tierid; };
 	$annname = $tierid; $annname =~ s/[^a-zA-Z0-9]//g;
 	if ( $debug ) { print "tier: $who, $tierid"; };
 	foreach $annotation ( $tier->findnodes("./ANNOTATION/ALIGNABLE_ANNOTATION") ) {
@@ -100,6 +109,7 @@ foreach $tier ( $eaf->findnodes("//TIER") ) {
 		$txt = $annotation->findnodes("./ANNOTATION_VALUE")->item(0)->textContent;
 		$utts{$i2t{$start}} .= "$annid;";
 		$anns{$annid}{'start'} = $start;	
+		$anns{$annid}{'tier'} = $tierid;	
 		$anns{$annid}{'who'} = $who;	
 		$anns{$annid}{'end'} = $end;	
 		$anns{$annid}{'text'} = $txt;
@@ -117,15 +127,35 @@ foreach $tier ( $eaf->findnodes("//TIER") ) {
 # Write the utterances
 foreach my $key (sort {$a <=> $b} keys %utts) {
 	$tmp = $utts{$key}; $tmp =~ s/;$//;
-	foreach $annid ( split(",", $tmp) ) {
+	if ( $debug ) {  print "Utterance $key: $tmp"; };
+	@annlist = split(";", $tmp);
+	foreach $annid ( @annlist ) {
 		$ann = $anns{$annid};
-		$utt = XML::LibXML::Element->new( "u" );
-		$utt->setAttribute("who", $ann->{'who'});
-		$utt->setAttribute("start", $key/1000);
-		$utt->setAttribute("end", $i2t{$ann->{'end'}}/1000);
-		$utt->appendText($ann->{'text'});
-		$text->appendChild($utt);
-		$text->appendText("\n");
+		if ( !$ann && $verbose ) { print "Oops - missing annotation segment $annid"; next; };
+		
+		$tier = $ann->{'tier'}; $putt = "";
+		if ( $tier && $prnt{$tier} ) {
+			$putt = $tutts{$prnt{$tier}}{$key};
+		};
+		if ( $putt ) {
+			$who = $ann->{'who'}.""; $who =~ s/[^a-zA-Z0-9_]//g;
+			$txt = $ann->{'text'}."";
+			print $putt->toString;
+			print "WHO: $who => $txt"; 
+			$putt->setAttribute($who, $txt);
+			print $putt->toString;
+		} else {
+			$utt = XML::LibXML::Element->new( "u" );
+			$utt->setAttribute("who", $ann->{'who'});
+			$utt->setAttribute("start", $key/1000);
+			$utt->setAttribute("end", $i2t{$ann->{'end'}}/1000);
+			$utt->appendText($ann->{'text'});
+			$text->appendChild($utt);
+			$text->appendText("\n");
+			if ( $tier && $chln{$tier} ) { print "tutt - $tier/$key"; $tutts{$tier}{$key} = $utt; };
+		};
+		
+		if ( $debug ) {  print " -- Annotation $annid: $text"; };
 		
 		while ( ( $key2, $val2) = each ( %{$ann->{'refs'}} ) ) {
 			if ( $debug ) { print "REF $key2 = $val2"; };
