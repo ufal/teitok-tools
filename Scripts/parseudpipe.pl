@@ -424,7 +424,13 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		$res = $ua->post( $url, \%form );
 		$jsdat = $res->decoded_content;
 		# $jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
-		$jsonkont = decode_json($res->decoded_content);
+		eval { 
+			$jsonkont = decode_json($res->decoded_content);
+		};
+		if ( !$jsonkont ) {
+			print "An error occurred - unable to parse response: ".$res->decoded_content;
+			exit;
+		};
 
 		if ( $verbose ) { print " - Writing CoNLL-U to $udfile"; };
 		open FILE, ">$udfile";

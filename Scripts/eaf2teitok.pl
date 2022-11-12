@@ -13,6 +13,7 @@ GetOptions ( ## Command line options
             'morerev=s' => \$morerev, # language of input
             'nospace' => \$nospace, # convert to whitespace-sensitive XML
             'nowho' => \$nowho, # do no put @who on utterances
+            'renamewav' => \$renamewav, # rename wav to fileid
             );
 
 $\ = "\n"; $, = "\t";
@@ -59,7 +60,8 @@ $text = XML::LibXML::Element->new( "text" );
 $doc->firstChild->appendChild($text);
 
 # Check the media file 
-foreach $node ( $eaf->findnodes("//MEDIA_DESCRIPTOR") ) {
+$medianodes = $eaf->findnodes("//MEDIA_DESCRIPTOR"); $i = 1;
+foreach $node ( @{$medianodes} ) {
 	$mediaurl = $node->getAttribute('MEDIA_URL');
 	$mediaurl =~ s/^\.\///;
 	if ( substr($mediaurl,0,5) eq 'file:' ) {
@@ -71,8 +73,15 @@ foreach $node ( $eaf->findnodes("//MEDIA_DESCRIPTOR") ) {
 	$recs->appendChild($newrec);
 	$newmedia = XML::LibXML::Element->new( "media" );
 	$newrec->appendChild($newmedia);
+	if ( $renamewav ) {
+		$mediaurl =~ s/.*\.//;
+		if ( scalar @{$medianodes} > 1 ) { 
+			$cnt = "_".$i++;
+		};
+		$mediaurl = $basename.$cnt.".".$mediaurl;
+	};
 	$newmedia->setAttribute("url", $mediaurl);
-
+	
 	$mime = $node->getAttribute('MIME_TYPE');
 	if ( $mime ) { 
 		$newmedia->setAttribute("mimeType", $mime);
@@ -149,10 +158,8 @@ foreach my $key (sort {$a <=> $b} keys %utts) {
 		if ( $putt ) {
 			$who = $ann->{'who'}.""; $who =~ s/[^a-zA-Z0-9_]//g;
 			$txt = $ann->{'text'}."";
-			print $putt->toString;
-			print "WHO: $who => $txt"; 
 			$putt->setAttribute($who, $txt);
-			print $putt->toString;
+			if ( $debug ) { print "Dependent annotation: ".$putt->toString; };
 		} else {
 			$utt = XML::LibXML::Element->new( "u" );
 			if ( !$nowho ) {
@@ -163,7 +170,10 @@ foreach my $key (sort {$a <=> $b} keys %utts) {
 			$utt->appendText($ann->{'text'});
 			$text->appendChild($utt);
 			$text->appendText("\n");
-			if ( $tier && $chln{$tier} ) { print "tutt - $tier/$key"; $tutts{$tier}{$key} = $utt; };
+			if ( $tier && $chln{$tier} ) { 
+				if ( $debug ) { print "tutt - $tier/$key"; };
+				$tutts{$tier}{$key} = $utt; 
+			};
 		};
 		
 		if ( $debug ) {  print " -- Annotation $annid: $text"; };
