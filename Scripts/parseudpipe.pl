@@ -252,6 +252,7 @@ sub treatfile ( $fn ) {
 				$tokxml = parsetok($tok); 
 				$tokhash{$tokid} = $tok;
 				$toklist .= $tokxml;
+				$cnt++; 
 				@tmp = split("\t", $tokxml); 
 				$rawtxt .= $tmp[1]." ";
 				if ( $tmp[1] =~ /^[.!?]$/ ) { 
@@ -264,12 +265,12 @@ sub treatfile ( $fn ) {
 					$toklist .= "\n"; 
 					$num = 0;
 				};
-				$num++; $tn++;
+				if ( $tokxml ne '' ) { $num++; $tn++; };
 			};
 		};
 		utf8::upgrade($toklist);
 		
-		if ( $debug ) { print "$cnt tokens to be submitted to UDPIPE"; };
+		if ( $debug ) { print "$cnt tokens to be submitted to UDPIPE:"; };
 
 	
 		if ( !$model ) {
@@ -329,7 +330,7 @@ sub parsetok ($tok) {
 		if ( $form ) { last; }
 	};
 	if ( !$form ) { $form = $tok->textContent; };
-	if ( !$form ) { $form = "_"; };	
+	if ( !$form ) { return ""; };	
 	
 	if ( $task eq 'parse' ) {
 		$lemma = $tok->getAttribute('lemma') or $lemma = "_";
@@ -343,6 +344,9 @@ sub parsetok ($tok) {
 	if ( $lemma eq '' ) { $lemma = "_"; };
 	if ( $upos eq '' ) { $upos = "_"; };
 	if ( $xpos eq '' ) { $xpos = "_"; };
+	
+	$form =~ s/^\s*|\s*$//gsmi;
+	if ( $form eq '_' || $form eq '' ) { return ""; }; # No empty strings in CONLL-U
 	
 	return "$num\t$form\t$lemma\t$upos\t$xpos\t$feats\t_\t_\t_\t$tokid\n"; $num++;
 };
