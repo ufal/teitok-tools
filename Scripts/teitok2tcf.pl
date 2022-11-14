@@ -115,7 +115,7 @@ if ( !$output && $outfolder ) {
 } else {
 	( $ofldr = $output ) =~ s/[^\/]+$//;
 	if ( $debug ) { print "Creating $ofldr when needed"; };
-	`mkdir -p $ofldr`;
+	if ( $oflder ) { `mkdir -p $ofldr`; };
 };
 
 if ( !$doc->findnodes("//tok") ) {
@@ -151,8 +151,6 @@ if ( $sents ) {
 		$senttxt =~ s/\s/ /g; $senttxt =~ s/ +/ /g; $senttxt =~ s/^ | $//g;
 		
 		$outsent = $tcf->createElement("tc:sentence"); $sec{'sentences'}->addChild($outsent);
-# 		print OUTFILE "# sent_id = $docid\_$sentid";
-# 		print OUTFILE "# text = $senttxt";
 		undef(%toknrs); # Undef to avoid sentence-crossing links
 
 		if ( !$norepair ) {
@@ -235,12 +233,9 @@ if ( $sents ) {
 } else {
 	if ( $verbose ) { print "Without sentences"; };
 	$snum = 1;
-# 	print OUTFILE "# sent_id = $docid\_s-".$snum++;
 	foreach $tok ( $doc->findnodes("//tok") ) {
 		if ( $newsent ) { 
-# 			print OUTFILE "# sent_id s-".$snum++; 
 # 			print OUTFILE "# text = $senttxt";
-# 			print OUTFILE putheads($sentlines);
 			$sentlines = ""; $senttxt = "";
 			$toknr = 0;
 		};
@@ -254,18 +249,16 @@ if ( $sents ) {
 		$num++;
 	};
 	if ( $sentlines ) {
-# 		print OUTFILE "# sent_id s-".$snum++; 
-# 		print OUTFILE "# text = $senttxt";
-# 		print OUTFILE putheads($sentlines);
 		$sentlines = ""; $senttxt = "";
 		$toknr = 0;
 	};
 };
-# This should not be needed
-# print OUTFILE "\n";
 
 $sec{'text'}->appendText($fulltext);
-print $tcf->toString(1);
+
+open OUTFILE, ">$output";
+print OUTFILE $tcf->toString(1);	 # TODO - indentation does not work since parser did not (and cannot) use no_blanks
+close OUTFLE;
 
 sub parsetok($tk) {
 	$tk = @_[0];
