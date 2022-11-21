@@ -34,6 +34,7 @@ GetOptions ( ## Command line options
             'mode=s' => \$mode, # how to run UDPIPE (server or local - when /usr/local/bin/udpipe)
             'force' => \$force, # run without checks
             'task=s' => \$task, # run as tagger / parser
+            'token=s' => \$udptok, # use a login token for UDPIPE (billing)
             'emptys' => \$emptys, # keep <s> nodes as empty nodes (with a @corresp)
             'modelroot=s' => \$modelroot, # folder where the models are
             );
@@ -388,7 +389,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		$totag = 1; $toparse = 1;
 	};
 
-	if ( -e "/usr/local/bin/udpipe" && $mode ne 'server' ) {
+	if ( -e "/usr/local/bin/udpipe" && $mode eq 'local' ) {
 		
 		if ( !$modelroot ) { ( $modelroot = $scriptname ) =~ s/\/[^\/]+$//; };
 		if ( -e "$modelroot/$model" ) {
@@ -425,6 +426,10 @@ sub runudpipe ( $raw, $model, $udfile ) {
 	
 		$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
 		if ( $verbose ) { print " - Running UDPIPE from $url / $model"; };
+		if ( $udptok ) {
+		 	$ua->default_header(Authorization=>"Bearer $udptok");
+			if ( $verbose ) { print " - Running with billing token $udptok"; };
+		 };
 		$res = $ua->post( $url, \%form );
 		$jsdat = $res->decoded_content;
 		# $jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
