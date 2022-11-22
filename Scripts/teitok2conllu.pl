@@ -23,6 +23,7 @@ GetOptions ( ## Command line options
             'pos=s' => \$posatt, # XPOS tag
             'form=s' => \$wform, # form to use as word
             'output=s' => \$output, # output file name
+            'ner=s' => \$nerformat, # output format for NER - none/udne/coref/iob
             'outfolder=s' => \$outfolder, # Originals folder
             'tagmapping=s' => \$tagmapping, # XPOS tag
             'training' => \$training, # write back to original file or put in new file
@@ -57,18 +58,27 @@ if ( !$wform ) {
 	# We need an inheritance from the settings
 	$doc = "";
 	$setfile = "Resources/settings.xml"; 
-	if ( $verbose ) { print "Reading settings from $setfile for inheritance from $wform	"; };
 	eval {
 		$setxml = $parser->load_xml(location => $setfile);
 	};
-	if ( $setxml ) { foreach $node ( $setxml->findnodes("//xmlfile/pattributes/forms/item") ) {
-		$from = $node->getAttribute("key");
-		$to = $node->getAttribute("inherit");
-		$inherit{$from} = $to;
-	};};
+	if ( $setxml ) { 
+		if ( $verbose ) { print "Reading settings from $setfile for inheritance from $wform	"; };
+		foreach $node ( $setxml->findnodes("//xmlfile/pattributes/forms/item") ) {
+			$from = $node->getAttribute("key");
+			$to = $node->getAttribute("inherit");
+			$inherit{$from} = $to;
+		};
+	} else {
+		@tmp = split(",", $wform);
+		foreach $to ( @tmp ) {
+			if ( $from ) { $inherit{$from} = $to; };
+			$from = $to;
+		};
+	};
 	if ( !$inherit{'form'} ) { $inherit{'form'} = "pform"; };
+	if ( $verbose && !$inherit{$wform} ) { print "Warning: no inheritance defined for $wform"; };
+	if ( $debug ) { while ( ( $key, $val ) = each ( %inherit ) ) { print "Inherit: $key => $val"; }; };
 };
-if ( $debug ) { while ( ( $key, $val ) = each ( %inherit ) ) { print "Inherit: $key => $val"; }; };
 
 if ( $tagmapping && -e $tagmapping ) {
 	open FILE, $tagmapping;
@@ -95,8 +105,10 @@ if ( !$output && $outfolder ) {
 	};
 } else {
 	( $ofldr = $output ) =~ s/[^\/]+$//;
-	if ( $debug ) { print "Creating $ofldr when needed"; };
-	`mkdir -p $ofldr`;
+	if ( $oflder ) {
+		if ( $debug ) { print "Creating $ofldr when needed"; };
+		`mkdir -p $ofldr`;
+	};
 };
 
 if ( !$doc->findnodes("//tok") ) {
@@ -111,6 +123,80 @@ if ( $output ) {
 	*OUTFILE = STDOUT;
 };
 binmode(OUTFILE, ":utf8");
+
+
+# Handle NER either from <name> tags or from <spanGrp type="entities">
+if ( $nerformat ne "none" ) {
+	$ents = $doc->findnodes("//spanGrp[\@type=\"entities\"]/span");
+	if ( !$nertags && $ents) {
+		$nerord = 0; $sameas = "sameAs";
+		foreach $ent ( @{$ents} ) {	
+			$typeatt = $ent->getAttribute("type"); if ( !$typeatt ) { $typeatt = "ent"; };
+			$nerord++; $nertypet = $nertype = $typeatt;
+			@etoks = split(" ", $ent->getAttribute($sameas) );
+			foreach $tokid ( @etoks  ) {
+				$tokid =~ s/^#//; 
+				if ( $tokid ) {
+					$nelabel = "";
+					if ( $nerformat eq "coref" ) {
+						if ( $ntid == 0 ) { $nelabel = "Entity=\(e$nerord-".$nertypet;	};	
+						if ( $ntid+1 == scalar ( @etoks ) ) {
+							if ( $ntid == 0 ) { 
+								$nelabel .= ")";	
+							} else { 	
+								$nelabel = "Entity=e$nerord\)";
+							};	
+						};					
+					} elsif ( $nerformat eq "iob" ) {
+						if ( $ntid == 0 ) { $ob = "B"; }
+						else { $ob = "I"; };
+						$nelabel = "IOB=".$ob."-".$nertypet;
+					} else {
+						$nelabel = "NE=".$nertypet."_".$nerord;
+					};
+					$nelables{$tokid} .= "|".$nelabel;
+				};
+				$ntid++;
+			};
+		};
+	} else {
+		if ( !$nertags ) { $nertags = "name,persName,orgName,placeName"; };
+		$nerord = 0;
+		foreach $nertag ( split(",", $nertags) ) {
+			$nertype = $nertag; $nertype =~ s/Name$//; 
+			foreach $ent ( $doc->findnodes("//text//$nertag") ) {
+				$nerord++; $nertypet = $nertype;
+				$typeatt = $ent->getAttribute("type");
+				if ( $typeatt ) { $nertypet .= "[$typeatt]"};
+				$ntid = 0; $etoks = $ent->findnodes(".//tok");
+				foreach $tok ( @{$etoks} ) {
+					$tokid = $tok->getAttribute("id"); 
+					if ( $tokid ) {
+						$nelabel = "";
+						if ( $nerformat eq "coref" ) {
+							if ( $ntid == 0 ) { $nelabel = "Entity=\(e$nerord-".$nertypet;	};	
+							if ( $ntid+1 == scalar ( @{$etoks} ) ) {
+								if ( $ntid == 0 ) { 
+									$nelabel .= ")";	
+								} else { 	
+									$nelabel = "Entity=e$nerord\)";
+								};	
+							};					
+						} elsif ( $nerformat eq "iob" ) {
+							if ( $ntid == 0 ) { $ob = "B"; }
+							else { $ob = "I"; };
+							$nelabel = "IOB=".$ob."-".$nertypet;
+						} else {
+							$nelabel = "NE=".$nertypet."_".$nerord;
+						};
+						$nelables{$tokid} .= "|".$nelabel;
+					};
+					$ntid++;
+				};
+			};
+		};
+	};
+};
 
 # Convert <dtok> to <tok> (to be dealt with later)
 $scnt = 1;
@@ -303,6 +389,10 @@ sub parsetok($tk) {
 			$misc .= $tokid; 
 		} else {
 			$misc .= "tokId=".$tokid; 
+		};
+		
+		if ( $nelables{$tokid} ) {
+			$misc .= $nelables{$tokid}; 
 		};
 		
 		# fallback

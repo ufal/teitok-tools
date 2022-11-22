@@ -29,6 +29,7 @@ def readback(filename):
 				if thisid >= annid:
 					annid = thisid + 1
 
+	# Deal with NER 
 	nerxml = xmlf.find("//{*}spanGrp[@type=\"entities\"]")
 	firstann = annid
 	if nerxml is None:
