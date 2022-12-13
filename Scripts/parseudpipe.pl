@@ -37,6 +37,7 @@ GetOptions ( ## Command line options
             'token=s' => \$udptok, # use a login token for UDPIPE (billing)
             'emptys' => \$emptys, # keep <s> nodes as empty nodes (with a @corresp)
             'modelroot=s' => \$modelroot, # folder where the models are
+            'nocheck' => \$nocheck, # run the model, do not check if it exists
             );
 
 $\ = "\n"; $, = "\t";
@@ -119,7 +120,7 @@ if ( !$model ) {
 		if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
 		if ( $verbose ) { print "Choosing $model for $lang"; };
 	};
-} elsif ( !$models{$model} && !$force ) { print "No such UDPIPE model: $model"; exit;  };
+} elsif ( !$models{$model} && !$force && !$nocheck ) { print "No such UDPIPE model: $model"; exit;  };
 
 if ( $verbose ) { print "Using model: $model"; };
 
