@@ -296,6 +296,8 @@ sub treatfile ( $fn ) {
 		
 		parseconllu($udfile);		
 		
+		if ( !$usedmodel ) { $usedmodel = $model; }; # Try to always use the model read from conllu
+		
 		# Add the revision statement
 		$revnode = makenode($xml, "/TEI/teiHeader/revisionDesc/change[\@who=\"udpipe\"]");
 		$when = strftime "%Y-%m-%d", localtime;
@@ -466,6 +468,7 @@ sub parseconllu($fn) {
 		$line = $_; chop($line);
 		if ( $line =~ /# ?([a-z0-9A-Z\[\]¹_-]+) ?=? (.*)/ ) {
 			$snts{$1} = $2;
+			if ( $1 eq 'udpipe_model' ) { $usedmodel = $2; };
 		} elsif ( $line =~ /^(\d+)\t(.*)/ ) {
 			$tokcnt++;
 			@tmp = split ("\t", $line);
