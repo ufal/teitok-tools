@@ -122,7 +122,7 @@ if ( !$model ) {
 	};
 } elsif ( !$models{$model} && !$force && !$nocheck ) { print "No such UDPIPE model: $model"; exit;  };
 
-if ( $verbose ) { print "Using model: $model"; };
+if ( $verbose && !$nocheck ) { print "Using model: $model"; };
 
 if ( !$writeback) { mkdir($tmpf."udpipe"); };
 @formatts = split( ",", $atts );
@@ -297,6 +297,7 @@ sub treatfile ( $fn ) {
 		parseconllu($udfile);		
 		
 		if ( !$usedmodel ) { $usedmodel = $model; }; # Try to always use the model read from conllu
+		if ( $verbose && $nocheck ) { print "Used model: $usedmodel"; };
 		
 		# Add the revision statement
 		$revnode = makenode($xml, "/TEI/teiHeader/revisionDesc/change[\@who=\"udpipe\"]");
@@ -468,7 +469,10 @@ sub parseconllu($fn) {
 		$line = $_; chop($line);
 		if ( $line =~ /# ?([a-z0-9A-Z\[\]¹_-]+) ?=? (.*)/ ) {
 			$snts{$1} = $2;
-			if ( $1 eq 'udpipe_model' ) { $usedmodel = $2; };
+			if ( $1 eq 'udpipe_model' ) { 
+				$usedmodel = $2; 
+				if ( $debug ) { print "Model response: $usedmodel"; };
+			};
 		} elsif ( $line =~ /^(\d+)\t(.*)/ ) {
 			$tokcnt++;
 			@tmp = split ("\t", $line);
