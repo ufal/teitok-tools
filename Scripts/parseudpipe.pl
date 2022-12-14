@@ -303,7 +303,7 @@ sub treatfile ( $fn ) {
 		$revnode = makenode($xml, "/TEI/teiHeader/revisionDesc/change[\@who=\"udpipe\"]");
 		$when = strftime "%Y-%m-%d", localtime;
 		$revnode->setAttribute("when", $when);
-		$revnode->appendText("parsed with UDPIPE using $model");
+		$revnode->appendText("parsed with UDPIPE using $usedmodel");
 		
 		if ( $writeback ) { 
 			$outfile = $orgfile;
