@@ -428,7 +428,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		open FILE, ">>$udfile";
 		binmode (FILE, ":utf8");
 
-		$maxpost = 100000;
+		$maxpost = 200000;
 		print " - Running UDPIPE from $url / $model";
 		if ( length($raw) > $maxpost ) {
 			$fcnt = int(length($raw)/$maxpost );
@@ -440,7 +440,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 				$cutoff = index($raw, "# sent_id", $maxpost);
 				$rawpart = substr($raw,0,$cutoff);
 				$raw = substr($raw, $cutoff);
-				if ( length($rawpart) > $maxpost ) { print "Sentences are too long - no sentence boundaries?"; exit; };
+				if ( length($rawpart) > $maxpost + 4000 ) { print "Sentences are too long (".length($rawpart).") - no sentence boundaries?"; print $rawpart; exit; };
 				if ( $verbose ) { print " - processing part ".$pcnt++; };
 			} else {
 				$rawpart = $raw; $raw = "";
