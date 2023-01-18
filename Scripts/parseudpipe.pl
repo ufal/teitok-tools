@@ -420,35 +420,63 @@ sub runudpipe ( $raw, $model, $udfile ) {
 						
 	} else {
 
-		%form = (
-			"input" => "conllu",
-			"tagger" => "$totag",
-			"parser" => "$toparse",
-			"model" => $model,
-			"data" => $raw,
-		);
-	
-		$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
-		if ( $verbose ) { print " - Running UDPIPE from $url / $model"; };
-		if ( $udptok ) {
-		 	$ua->default_header(Authorization=>"Bearer $udptok");
-			if ( $verbose ) { print " - Running with billing token $udptok"; };
-		 };
-		$res = $ua->post( $url, \%form );
-		$jsdat = $res->decoded_content;
-		# $jsonkont = decode_json(encode("UTF-8", $res->decoded_content));
-		eval { 
-			$jsonkont = decode_json($res->decoded_content);
-		};
-		if ( !$jsonkont ) {
-			print "An error occurred - unable to parse response: ".$res->decoded_content;
-			exit;
-		};
-
-		if ( $verbose ) { print " - Writing CoNLL-U to $udfile"; };
+		print " - Writing CoNLL-U to $udfile";
+		# create first, then open for append
 		open FILE, ">$udfile";
+		close FILE;
+		
+		open FILE, ">>$udfile";
 		binmode (FILE, ":utf8");
-		print FILE $jsonkont->{'result'};
+
+		$maxpost = 100000;
+		print " - Running UDPIPE from $url / $model";
+		if ( length($raw) > $maxpost ) {
+			$fcnt = int(length($raw)/$maxpost );
+			print " - splitting up in around $fcnt parts of max $maxpost to stay below post limit";
+		};		
+		while ( $raw ne "" ) {
+			if ( length($raw) > $maxpost ) {
+				$cutoff = index($raw, "# sent_id", $maxpost);
+				$rawpart = substr($raw,0,$cutoff);
+				$raw = substr($raw, 0, $cutoff);
+				if ( $verbose ) { print " - processing part ".$pcnt++; };
+			} else {
+				$rawpart = $raw; $raw = "";
+			};
+		
+			%form = (
+				"input" => "conllu",
+				"tagger" => "$totag",
+				"parser" => "$toparse",
+				"model" => $model,
+				"data" => $rawpart,
+			);
+	
+			$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
+			$res = $ua->post( $url, \%form );
+			$jsdat = $res->decoded_content;
+			eval {
+				$jsonkont = decode_json($res->decoded_content);
+			};
+			if ( !$jsonkont ) {
+				print "UDPipe response error: ";
+				print $jsdat;
+				if ( $verbose && $jsdat =~ /The payload size is too large/ ) {
+					print "Length of \$rawpart: ".length($rawpart);
+					print "Lines: ".scalar split("\n", $rawpart);
+				};
+				exit;
+			};
+		
+			if ( $jsdat =~ /# udpipe_model = ([^ \\]+)/ ) { 
+				if ( $modelused ne $1 ) {
+					$modelused = $1; 
+					print " - Model set by UDPipe to $modelused";
+				};
+			};
+
+			print FILE $jsonkont->{'result'};
+		};
 		close FILE;
 		
 		if ( $debug ) { print `wc $udfile`; };

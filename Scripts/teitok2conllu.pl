@@ -19,6 +19,7 @@ GetOptions ( ## Command line options
             'longid' => \$longid, # write tok_id= in the misc column
             'norepair' => \$norepair, # do not repair tree errors
             'file=s' => \$filename, # input file name
+            'settings=s' => \$setfile, # input file name
             'posatt=s' => \$posatt, # name to use for pos
             'pos=s' => \$posatt, # XPOS tag
             'form=s' => \$wform, # form to use as word
@@ -57,7 +58,7 @@ if ( !$wform ) {
 } else {
 	# We need an inheritance from the settings
 	$doc = "";
-	$setfile = "Resources/settings.xml"; 
+	if ( !$setfile ) { $setfile = "Resources/settings.xml"; };
 	eval {
 		$setxml = $parser->load_xml(location => $setfile);
 	};
