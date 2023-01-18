@@ -436,9 +436,11 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		};		
 		while ( $raw ne "" ) {
 			if ( length($raw) > $maxpost ) {
+				# Parse part of the file - starting from the first sentence after $maxpost
 				$cutoff = index($raw, "# sent_id", $maxpost);
 				$rawpart = substr($raw,0,$cutoff);
-				$raw = substr($raw, 0, $cutoff);
+				$raw = substr($raw, $cutoff);
+				if ( length($rawpart) > $maxpost ) { print "Sentences are too long - no sentence boundaries?"; exit; };
 				if ( $verbose ) { print " - processing part ".$pcnt++; };
 			} else {
 				$rawpart = $raw; $raw = "";
