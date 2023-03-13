@@ -40,7 +40,7 @@ sub conllu2tei($fn) {
 	$/ = "\n";
 	open FILE, $fn; $insent = 0; $inpar = 0; $indoc = 0; $doccnt =1;
 	while ( <FILE> ) {	
-		$line = $_; chop($line);
+		$line = $_; $line =~ s/[\n\r]//g;
 		if ( $line =~ /# newdoc id = (.*)/ || $line =~ /# newdoc/ ) {
 			$doccnt++;
 			$newdoc = $1 or $newdoc = "doc$doccnt";
