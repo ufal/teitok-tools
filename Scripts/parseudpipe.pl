@@ -284,7 +284,12 @@ sub treatfile ( $fn ) {
 		
 		if ( $debug ) { print "$cnt tokens to be submitted to UDPIPE:"; };
 
-	
+		if ( !$model && !$lang ) {
+			$tmp = $xml->findnodes("//langUsage/language/\@ident");
+			if ( $tmp ) { $lang = $tmp->item(0)->value; }
+			elsif ( $verbose ) { print "No language/@ident in teiHeader"; };
+		};
+		
 		if ( !$model && !$lang ) {
 			$lang = detectlang($rawtxt);
 			$model = $code2model{$lang};
