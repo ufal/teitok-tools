@@ -56,7 +56,7 @@ if ( !$atts ) { $atts = "nform,reg,fform,expan,form"; };
 if ( !$xpostag ) { $xpostag = "xpos"; };
 
 if ( !$file ) { $file = shift; };
-if ( !$mode ) { $mode = "local"; };
+if ( !$mode ) { $mode = "server"; };
 
 if ( $extfile ) {
 	if ( $verbose ) { print "Taking input from: $extfile"; };
@@ -102,27 +102,37 @@ if ( $extfile ) {
 	exit;
 };
 
-( $tmp = $0 ) =~ s/Scripts.*/Resources\/udpipe-models.txt/;
-open FILE, $tmp; %udm = ();
-while ( <FILE> ) {
-	chop;
-	( $iso, $code, $lg, $mod ) = split ( "\t" );
-	$code2model{$code} = $mod;
-	$code2model{$iso} = $mod;
-	$lang2model{$lg} = $mod;
-	$mod2lang{$mod} = ucfirst($lg);
-	$mod2code{$mod} = $code;
-	$models{$mod} = 1;
-}; 
-if ( !$model ) {
-	if ( $lang ) { 
-		$model = $code2model{$lang} or $model = $lang2model{lc($lang)};
-		if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
-		if ( $verbose ) { print "Choosing $model for $lang"; };
-	};
-} elsif ( !$models{$model} && !$force && !$nocheck ) { print "No such UDPIPE model: $model"; exit;  };
+if ( $mode eq "local" ) {
 
-if ( $verbose && !$nocheck ) { print "Using model: $model"; };
+	( $tmp = $0 ) =~ s/Scripts.*/Resources\/udpipe-models.txt/;
+	open FILE, $tmp; %udm = ();
+	while ( <FILE> ) {
+		chop;
+		( $iso, $code, $lg, $mod ) = split ( "\t" );
+		$code2model{$code} = $mod;
+		$code2model{$iso} = $mod;
+		$lang2model{$lg} = $mod;
+		$mod2lang{$mod} = ucfirst($lg);
+		$mod2code{$mod} = $code;
+		$models{$mod} = 1;
+	}; 
+	if ( !$model ) {
+		if ( $lang ) { 
+			$model = $code2model{$lang} or $model = $lang2model{lc($lang)};
+			if ( !$model ) { print "No UDPIPE models for $lang"; exit; };
+			if ( $verbose ) { print "Choosing $model for $lang"; };
+		};
+	} elsif ( !$models{$model} && !$force && !$nocheck ) { print "No such UDPIPE model: $model"; exit;  };
+
+	if ( $verbose && !$nocheck ) { print "Using model: $model"; };
+
+} else {
+
+	if ( $verbose && $model ) { print "Using model: $model"; }
+	elsif ( $verbose && $lang ) { print "Using language: $lang"; };
+
+};
+
 
 if ( !$writeback) { mkdir($tmpf."udpipe"); };
 @formatts = split( ",", $atts );
@@ -275,7 +285,7 @@ sub treatfile ( $fn ) {
 		if ( $debug ) { print "$cnt tokens to be submitted to UDPIPE:"; };
 
 	
-		if ( !$model ) {
+		if ( !$model && !$lang ) {
 			$lang = detectlang($rawtxt);
 			$model = $code2model{$lang};
 			if ( $verbose ) { print "Detected language : $lang => $model"; };
@@ -427,6 +437,8 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		
 		open FILE, ">>$udfile";
 		binmode (FILE, ":utf8");
+
+		if ( !$model && $lang ) { $model = $lang; };
 
 		$maxpost = 200000; $maxsent = 10000;
 		print " - Running UDPIPE from $url / $model";
