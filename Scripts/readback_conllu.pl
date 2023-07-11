@@ -193,7 +193,7 @@ sub moveinside ( $node ) {
 	$sameas =~ s/#//g;
 	@list = split(' ', $sameas);
 	$tok1 = $list[0]; $tok2 = $list[-1];
-	if ( !$tok1 || !$tok2 || !$toklist{$tok1} || !$toklist{$tok2} ) { print "Not able to move - $sameas / $tok1 - $tok2"; return -1; };
+	if ( !$tok1 || !$tok2 || !$toklist{$tok1} || !$toklist{$tok2} ) { return -1; };
 	if ( $toklist{$list[0]}->parentNode == $toklist{$list[-1]}->parentNode ) {
 		$curr = $node;
 		while ( $curr->getAttribute("id") ne $list[-1] ) {
