@@ -188,7 +188,7 @@ if "verbose" in cargs.keys() and fname:
 	print("Processing XML file: " + fname)
 
 if "help" in cargs.keys():
-	print('''Usage: python cas2teitok.py [options] FILENAME
+	print('''Usage: python readback_conllu.py [options] FILENAME
 
 Options:
 --help         : show this help

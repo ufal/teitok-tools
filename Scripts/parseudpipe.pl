@@ -304,7 +304,7 @@ sub treatfile ( $fn ) {
 				
 		$udfile = $fn;
 		if ( $folder eq '' ) { $udfile = "udpipe/$udfile"; };
-		$udfile =~ s/\..*?$/\.conllu/;
+		$udfile =~ s/\.[^.]*$/\.conllu/;
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
 		`mkdir -p $tmp`;
 		$conllu = runudpipe($toklist, $model, $udfile);
