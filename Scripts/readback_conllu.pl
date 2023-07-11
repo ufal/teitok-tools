@@ -28,6 +28,8 @@ $\ = "\n"; $, = "\t";
 %ord2id = ();
 @nerlist = ();
 
+@warnings = ();
+
 if ( $debug ) { $verbose = 1; };
 if ( $verbose ) { print "Loading $input into $cid"; };
 
@@ -66,6 +68,10 @@ foreach $ner ( @nerlist ) {
 	};
 };
 
+if ( scalar @warnings ) {
+	$warnlist = "'warnings': ['".join("', '", @warnings)."']";
+};	
+
 if ( $test ) { 
 	print $doc->toString;
 } else {
@@ -83,7 +89,8 @@ if ( $test ) {
 	print FILE $doc->toString;
 	close FILE;
 
-	print "New data have been added to $cid";
+	print "{'success': 'CoNLL-U file successfully read back to $cid'$warnlist}";
+
 };
 
 sub conllu2tei($fn) {
@@ -132,7 +139,7 @@ sub placetok ($tokline) {
 	@flds = split("\t", $tokline ); 
 	if ( $flds[9] =~ /([|]|^)tokId=([^|]+)/i ) { $tokid = $2; };
 	if ( !$tokid ) { 
-		print "Oops - no tokid provided: $tokline";
+		push(@warning, "Token without ID in CoNLL-U input");
 		return -1;
 	};
 	$ord2id{$flds[0]} = $tokid;
@@ -141,7 +148,7 @@ sub placetok ($tokline) {
 	};
 	$tok = $toklist{$tokid};
 	if ( !$tok ) { 
-		print "Oops - no such tok: $tokid";
+		push(@warning, "Token not found in XML: $tokid");
 		return -1;
 	};
 	if ( $flds[9] =~ /([|]|^)ner=([^|]+)/i ) { 
@@ -178,7 +185,7 @@ sub makeheads() {
 	while ( ( $ord, $head ) = each ( %ord2head ) ) {
 		$tok = $toklist{$ord2id{$ord}};
 		if ( !$tok ) { 
-			print "Oops - no such tok: $tokid";
+			push(@warning, "Token not found: ".$ord2id{$ord});
 			return -1;
 		};
 		$tok->setAttribute("head", $ord2id{$head});
@@ -193,12 +200,12 @@ sub moveinside ( $node ) {
 	$sameas =~ s/#//g;
 	@list = split(' ', $sameas);
 	$tok1 = $list[0]; $tok2 = $list[-1];
-	if ( !$tok1 || !$tok2 || !$toklist{$tok1} || !$toklist{$tok2} ) { return -1; };
+	if ( !$tok1 || !$tok2 || !$toklist{$tok1} || !$toklist{$tok2} ) { push(@warning, "unable to move tokens inside NER"); return -1; };
 	if ( $toklist{$list[0]}->parentNode == $toklist{$list[-1]}->parentNode ) {
 		$curr = $node;
 		while ( $curr->getAttribute("id") ne $list[-1] ) {
 			$curr = $curr->nextSibling();
-			if ( !$curr ) { return -1; };
+			if ( !$curr ) { push(@warning, "unable to move tokens inside NER"); return -1; };
 			$node->addChild($curr);
 		};
 	};
