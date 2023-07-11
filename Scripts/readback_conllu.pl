@@ -14,6 +14,9 @@ $scriptname = $0;
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'verbose' => \$verbose, # verbose mode
+            'test' => \$test, # test mode (print, do not save)
+            'nobu' => \$nobu, # do not make a backup
+            'emptys' => \$emptys, # do not make a backup
             'cid=s' => \$cid, # which UDPIPE model to use
             'input=s' => \$input, # which UDPIPE model to use
             'tmpfolder=s' => \$tmpfolder, # Folders where conllu files will be placed
@@ -21,11 +24,11 @@ GetOptions ( ## Command line options
 
 $\ = "\n"; $, = "\t";
 
-$verbose = 1;
-
 @udflds = ( "ord", "word", "lemma", "upos", "xpos", "feats", "ohead", "deprel", "deps", "misc" ); 
 %ord2id = ();
+@nerlist = ();
 
+if ( $debug ) { $verbose = 1; };
 if ( $verbose ) { print "Loading $input into $cid"; };
 
 if ( !-e $cid ) {
@@ -46,17 +49,36 @@ if ( !-e $input ) {
 };
 conllu2tei($input);
 
+# Place the NER if we have any
+foreach $ner ( @nerlist ) {
+	$sameas = $ner->getAttribute("sameAs");
+	$ener = $doc->findnodes("//name[\@sameAs=\"$sameas\"]");
+	if ( $ener ) {
+		$ener->setAttribute('type', $ner->getAttribute('type'));
+	} else {
+		@tmp = split(' ', $sameas);
+		$tok1 = substr($tmp[0], 1);
+		$tok = $toklist{$tok1};
+		$tok->parentNode->insertBefore($ner, $tok);
+		if ( !$emptys ) {
+			moveinside($ner);
+		};
+	};
+};
+
 if ( $test ) { 
-print $doc->toString;
+	print $doc->toString;
 } else {
 
 	# Make a backup of the file
-	( $buname = $cid ) =~ s/xmlfiles.*\//backups\//;
-	$date = strftime "%Y%m%d", localtime; 
-	$buname =~ s/\.xml/-$date.nt.xml/;
-	$cmd = "/bin/cp $filename $buname";
-	`$cmd`;
-
+	if ( !$nobu ) {
+		( $buname = $cid ) =~ s/xmlfiles.*\//backups\//;
+		$date = strftime "%Y%m%d", localtime; 
+		$buname =~ s/\.xml/-$date.nt.xml/;
+		$cmd = "/bin/cp '$filename' '$buname'";
+		`$cmd`;
+	};
+	
 	open FILE, ">$cid";
 	print FILE $doc->toString;
 	close FILE;
@@ -90,27 +112,25 @@ sub conllu2tei($fn) {
 		} elsif ( $line =~ /^(\d+\.\d+)\t(.*)/ ) {
 			# To do : non-word tokens; ignore for now (extended trees - only becomes relevant if UD integration stronger)
 		} elsif ( $line =~ /^#/ ) {
-			# To do : ??	
+			# To do : unknown comment line	
 		} elsif ( $line eq '' ) {
-			$linex .= makeheads();
+			# End of sentence
+			makeheads();
 			%tok = (); %mtok = ();  %etok = ();  %tokid = ();  %sent = ();
 		} else {
 			print "What? ($line)"; 
 		};
 	};
-	if ( keys %sent ) { $linex .= makesent(%sent, %tok); }; # Add the last sentence if needed
-	if ( $inpar ) { $linex .= "</p>\n"; };
-	if ( $indoc ) { $linex .= "</doc>\n"; };
-
-	return $linex;
+	if ( keys %sent ) { makeheads(); }; # Add the last sentence if needed
 		
 };
+
 
 sub placetok ($tokline) {
 	# Place all attributes from the CoNLL-U token on the TEITOK token
 	$tokline = @_[0];
 	@flds = split("\t", $tokline ); 
-	if ( $flds[9] =~ /tokId=([^|]+)/i ) { $tokid = $1; };
+	if ( $flds[9] =~ /([|]|^)tokId=([^|]+)/i ) { $tokid = $2; };
 	if ( !$tokid ) { 
 		print "Oops - no tokid provided: $tokline";
 		return -1;
@@ -124,6 +144,23 @@ sub placetok ($tokline) {
 		print "Oops - no such tok: $tokid";
 		return -1;
 	};
+	if ( $flds[9] =~ /([|]|^)ner=([^|]+)/i ) { 
+		$nerdef = $2; 
+		if ( $nerdef =~ /B-(.*)/ ) {
+			if ( $debug ) { print ("New NER detected: $tokid / $nerdef"); };
+			$type = $1;
+			$newner = $doc->createElement("name");
+			push(@nerlist, $newner);
+			$currner{$type} = $newner;
+			$currner{$type}->setAttribute("type", $type);
+			$currner{$type}->setAttribute("sameAs", "#$tokid");
+		} elsif ( $nerdef =~ /I-(.*)/ ) {
+			if ( $debug ) { print ("Follow-up NER detected: $tokid / $nerdef"); };
+			$type = $1;
+			$sameas = $currner{$type}->getAttribute("sameAs")." #$tokid";
+			$currner{$type}->setAttribute("sameAs", $sameas);
+		};
+	};
 	for ( $i=0; $i<scalar @udflds; $i++ ) {
 		$key = $udflds[$i]; 
 		$val = $flds[$i];
@@ -133,6 +170,7 @@ sub placetok ($tokline) {
 		if ( $oval && !$force ) { next; };
 		$tok->setAttribute($key, $val);
 	};
+	if ( $debug ) { print $tok->toString; };
 };
 
 sub makeheads() {
@@ -145,6 +183,24 @@ sub makeheads() {
 		};
 		$tok->setAttribute("head", $ord2id{$head});
 		print $tok->toString;
+	};
+};
+
+sub moveinside ( $node ) {
+	# Move the @sameAs tokens inside
+	$node = @_[0];
+	$sameas = $node->getAttribute('sameAs');
+	$sameas =~ s/#//g;
+	@list = split(' ', $sameas);
+	$tok1 = $list[0]; $tok2 = $list[-1];
+	if ( !$tok1 || !$tok2 || !$toklist{$tok1} || !$toklist{$tok2} ) { print "Not able to move - $sameas / $tok1 - $tok2"; return -1; };
+	if ( $toklist{$list[0]}->parentNode == $toklist{$list[-1]}->parentNode ) {
+		$curr = $node;
+		while ( $curr->getAttribute("id") ne $list[-1] ) {
+			$curr = $curr->nextSibling();
+			if ( !$curr ) { return -1; };
+			$node->addChild($curr);
+		};
 	};
 };
 
