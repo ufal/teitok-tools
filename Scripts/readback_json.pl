@@ -33,8 +33,14 @@ $\ = "\n"; $, = "\t";
 if ( $debug ) { $verbose = 1; };
 if ( $verbose ) { print "Loading $input into $cid"; };
 
+if ( !-e $cid || !$cid ) {
+	print "Usage: perl readback_json.pl --input=[JSON] --cid=[XML]";
+	exit;
+};
+
 if ( !-e $cid ) {
 	print "No such XML file: $cid";
+	exit;
 };
 $parser = XML::LibXML->new(); $doc = "";
 eval {
@@ -46,8 +52,10 @@ for $tok ( $doc->findnodes("//tok[not(dtok)] | //dtok") ) {
 	$toklist{$id} = $tok;
 };
 
+
 if ( !-e $input ) {
 	print "No such input file: $input";
+	exit;
 };
 $/ = undef;
 open FILE, $input;
@@ -61,6 +69,7 @@ foreach $key ( keys(%{$json}) ) {
 		$sameas = $node->{sameAs};
 		$ener = $doc->findnodes("//name[\@sameAs=\"$sameas\"]");
 		if ( $ener ) {
+			if ( $debug ) { print "Node $sameas exists - updating information"; };
 			foreach $key ( keys(%{$node}) ) {
 				$ener->item(0)->setAttribute($key, $node->{$key});
 			};
@@ -85,6 +94,7 @@ if ( scalar @warnings ) {
 	$warnlist = "'warnings': ['".join("', '", @warnings)."']";
 };	
 
+
 if ( $test ) { 
 	print $doc->toString;
 } else {
@@ -94,7 +104,7 @@ if ( $test ) {
 		( $buname = $cid ) =~ s/xmlfiles.*\//backups\//;
 		$date = strftime "%Y%m%d", localtime; 
 		$buname =~ s/\.xml/-$date.nt.xml/;
-		$cmd = "/bin/cp '$filename' '$buname'";
+		$cmd = "/bin/cp '$cid' '$buname'";
 		`$cmd`;
 	};
 	
@@ -117,9 +127,11 @@ sub moveinside ( $node ) {
 	if ( !$tok1 || !$tok2 || !$toklist{$tok1} || !$toklist{$tok2} ) { push(@warning, "unable to move tokens inside NER"); return -1; };
 	if ( $toklist{$list[0]}->parentNode == $toklist{$list[-1]}->parentNode ) {
 		$curr = $node;
-		while ( $curr->getAttribute("id") ne $list[-1] ) {
-			$curr = $curr->nextSibling();
-			if ( !$curr ) { push(@warning, "unable to move tokens inside NER"); return -1; };
+		print $toklist{$list[-1]}->toString;
+		while ( $curr ne $toklist{$list[-1]} ) {
+			$curr = $node->nextSibling();
+			if ( !$curr ) { print "Oops"; push(@warning, "unable to move tokens inside NER"); return -1; };
+			if ( $debug ) { print "Moving inside: ".$curr->toString; };
 			$node->addChild($curr);
 		};
 	};
