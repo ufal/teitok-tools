@@ -55,24 +55,28 @@ $jstr = <FILE>;
 close FILE;
 $json = decode_json($jstr);
 
-# Place the NER if we have any
-for $ner ( @{$json->{name}} ) {
-	$sameas = $ner->{sameAs};
-	$ener = $doc->findnodes("//name[\@sameAs=\"$sameas\"]");
-	if ( $ener ) {
-		$ener->setAttribute('type', $ner->{type});
-	} else {
-		@tmp = split(' ', $sameas);
-		$tok1 = substr($tmp[0], 1);
-		$tok = $toklist{$tok1};
+# Place all types in the jSON
+foreach $key ( keys(%{$json}) ) {
+	for $node ( @{$json->{$key}} ) {
+		$sameas = $node->{sameAs};
+		$ener = $doc->findnodes("//name[\@sameAs=\"$sameas\"]");
+		if ( $ener ) {
+			foreach $key ( keys(%{$node}) ) {
+				$ener->item(0)->setAttribute($key, $node->{$key});
+			};
+		} else {
+			@tmp = split(' ', $sameas);
+			$tok1 = substr($tmp[0], 1);
+			$tok = $toklist{$tok1};
 		
-		$newner = $doc->createElement("name");
-		foreach $key ( keys(%{$ner}) ) {
-			$newner->setAttribute($key, $ner->{$key});
-		};
-		$tok->parentNode->insertBefore($newner, $tok);
-		if ( !$emptys ) {
-			moveinside($newner);
+			$newner = $doc->createElement("name");
+			foreach $key ( keys(%{$node}) ) {
+				$newner->setAttribute($key, $node->{$key});
+			};
+			$tok->parentNode->insertBefore($newner, $tok);
+			if ( !$emptys ) {
+				moveinside($newner);
+			};
 		};
 	};
 };

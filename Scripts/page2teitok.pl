@@ -19,6 +19,7 @@ binmode(STDOUT, ":utf8");
             'output=s' => \$output, # output file
             'strippath' => \$strippath, # strip path from facs name
             'nopunct' => \$nopunct, # do not split off punctuation marks
+            'nofolders' => \$nofolders, # do not split off punctuation marks
             'noretoken' => \$noretoken, # do not merge across linebreaks
             );
 
@@ -27,6 +28,11 @@ if ( !$filename ) { $filename = shift; };
 if ( !$output ) { $output = "xmlfiles/$basename.xml"; };
 
 $today = strftime "%Y-%m-%d", localtime;
+
+if ( !-e $filename) {
+	print "No such file: $filename";
+	exit;
+}
 
 $/ = undef;
 open FILE, $filename;

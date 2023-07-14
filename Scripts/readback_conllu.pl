@@ -77,11 +77,11 @@ if ( $test ) {
 } else {
 
 	# Make a backup of the file
-	if ( !$nobu ) {
+	if ( !$nobu && -e $cid ) {
 		( $buname = $cid ) =~ s/xmlfiles.*\//backups\//;
 		$date = strftime "%Y%m%d", localtime; 
 		$buname =~ s/\.xml/-$date.nt.xml/;
-		$cmd = "/bin/cp '$filename' '$buname'";
+		$cmd = "/bin/cp '$cid' '$buname'";
 		`$cmd`;
 	};
 	
@@ -89,7 +89,7 @@ if ( $test ) {
 	print FILE $doc->toString;
 	close FILE;
 
-	print "{'success': 'CoNLL-U file successfully read back to $cid'$warnlist}";
+	print "{'success': 'CoNLL-U file successfully read back into $cid'$warnlist}";
 
 };
 
