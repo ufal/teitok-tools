@@ -52,7 +52,7 @@ Options:
 
 };
 
-if ( !$posatt ) { $posatt = "xpos"; };
+if ( !$posatt ) { $posatt = "pos"; };
 if ( !$wform ) { 
 	$wform = "pform"; 
 } else {
