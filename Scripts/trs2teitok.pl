@@ -3,7 +3,7 @@ use XML::LibXML;
 use Data::Dumper;
 use POSIX qw(strftime);
 
-# Convert PML files to TEITOK/XML
+# Convert Transcriber TRS files to TEITOK/XML
  
 GetOptions ( ## Command line options
 	'debug' => \$debug, # debugging mode
