@@ -487,6 +487,9 @@ sub calcform ( $node, $form ) {
 	if ( $form eq 'pform' ) {
 		$value = $node->toString;
 		$value =~ s/<[^>]*>//g;
+		$value =~ s/[\r\n]/ /g;
+		$value =~ s/ +/ /g;
+		$value =~ s/^ | $//g;
 		return $value;
 		# return $node->textContent;
 	} elsif ( $node->getAttribute($form) ) {
