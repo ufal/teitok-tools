@@ -2,9 +2,6 @@ use Getopt::Long;
 use Data::Dumper;
 use POSIX qw(strftime);
 use File::Find;
-use LWP::Simple;
-use LWP::UserAgent;
-use JSON;
 use XML::LibXML;
 use Encode;
 
