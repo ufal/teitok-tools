@@ -71,7 +71,7 @@ foreach $elm ( $doc->findnodes("//span[contains(\@class, 'ocrx_word')]") ) {
 	
 	while ( $elm->textContent =~ /(.*)(\p{isPunct})$/ ) {
 		$form = $1; $punct = $2;
-		if ( !$elm->findnodes('text()') ) { continue; }; # This should not happen, but does
+		if ( !$elm->findnodes('text()') ) { next; }; # This should not happen, but does
 		$elm->findnodes('text()')->[0]->setData($form);
 		$newtok = $doc->createElement("tok"); $newtok->appendText($punct);
 		$elm->parentNode->insertAfter($newtok, $elm);
@@ -79,7 +79,7 @@ foreach $elm ( $doc->findnodes("//span[contains(\@class, 'ocrx_word')]") ) {
 
 	while ( $elm->textContent =~ /^(\p{isPunct})(.*)/ ) {
 		$form = $2; $punct = $1;
-		if ( !$elm->findnodes('text()') ) { continue; }; # This should not happen, but does
+		if ( !$elm->findnodes('text()') ) { next; }; # This should not happen, but does
 		$elm->findnodes('text()')->[0]->setData($form);
 		$newtok = $doc->createElement("tok"); $newtok->appendText($punct);
 		$elm->parentNode->insertBefore($newtok, $elm);
