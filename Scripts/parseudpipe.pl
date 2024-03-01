@@ -304,7 +304,7 @@ sub treatfile ( $fn ) {
 				
 		$udfile = $fn;
 		if ( $folder eq '' ) { $udfile = "udpipe/$udfile"; };
-		$udfile =~ s/\.[^.]*$/\.conllu/;
+		$udfile =~ s/\.[^.]+$/\.conllu/;
 		( $tmp = $udfile ) =~ s/\/[^\/]+$//;
 		`mkdir -p $tmp`;
 		$conllu = runudpipe($toklist, $model, $udfile);
@@ -334,7 +334,7 @@ sub treatfile ( $fn ) {
 		$rawxml =~ s/xmlnstmp=/xmlns=/;
 
 		open OUTFILE, ">$outfile";
-		# binmode (OUTFILE, ":utf8");	# TODO: Is this ever needed?	
+		# binmode (OUTFILE, ":utf8"); # This is not needed since it should not be "proper" UTF8 
 		print OUTFILE $rawxml;	
 		close OUTFLE;
 		
@@ -450,6 +450,7 @@ sub runudpipe ( $raw, $model, $udfile ) {
 		if ( length($raw) > $maxpost ) {
 			$fcnt = int(length($raw)/$maxpost );
 			print " - splitting up in around $fcnt parts of max $maxpost to stay below post limit";
+			$partitioned = 1;
 		};		
 		while ( $raw ne "" ) {
 			if ( length($raw) > $maxpost ) {
