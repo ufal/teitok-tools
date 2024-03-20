@@ -120,6 +120,8 @@ for $i (0..length($text)-1){
 }
 if ( $makesent ) { $toks .= "</s>"; };
 if ( $makepar ) { $toks .= "</p>"; };
+$toks =~ s/([\n\r]+)<\/tok>/<\/tok>\1/g;
+$toks =~ s/<tok[^<>]*><\/tok>//g;
 $tei = $toks;
 
 $tei =~ s/ (<tok[^>]+>[,.!?)])/\1/g;
@@ -163,6 +165,7 @@ if ( $annfolder ) {
 	$stoff = $xml->createElement("standOff");
 	$root->addChild($stoff);
 	$stoff->addChild($spans);
+	$stoff->appendText("\n");
 	$stoff->addChild($links);
 };
 
@@ -174,12 +177,14 @@ while (<FILE>) {
 	chomp; $line = $_;
 	if ( $line =~ /^#/ ) { next; };
 
-	if ( /^(R.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
+	if ( $line =~ /^(R\d+)\t(.*)/ ) {
 		# Relation
-		$bratid = $1; $type = $2; $arg1 = $3; $arg2 = $4; $th = $5; 
+		$bratid = $1; $rest = $2;
+		print "Relation: $bratid => $rest";
+		( $type, $arg1, $arg2 ) = split(" ", $rest); 
 		if ( $arg1 =~ /(.*):(.*)/ ) { 
 			$an = $1; $br1 = $2; $tmp = $br2tt{$br1} or $tmp = "[$br1]"; $id1 = "#$tmp"; 
-			print "ARG1: $br1 => #$tmp";
+			print "- ARG1: $br1 => #$tmp";
 		};
 		if ( $arg2 =~ /(.*):(.*)/ ) { 
 			$an = $1; $br2 = $2; $tmp = $br2tt{$br2} or $tmp = "[$br2]"; $id2 = "#$tmp"; 
@@ -190,11 +195,27 @@ while (<FILE>) {
 		); if ( !$annnode ) { print FILE "Not able to parse annotation"; exit; };
 		$links->addChild($annnode->firstChild);
 		$links->appendText("\n");
-	} elsif ( /^(E.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
+	} elsif ( $line =~ /^(E\d+)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
 		# Event
-	} elsif ( /^(\*)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
+	} elsif ( $line =~ /^(\*)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
 		# Equivalence
-	} elsif ( /^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) { 
+	} elsif ( $line =~ /^(A\d+)\t(.*)/ ) {
+		# Annotation over T layers
+		$bratid = $1; $rest = $2;
+		( $ann, $type ) = split(" ", $rest); 
+		$lnk = $br2tt{$ann};
+		$th = $br2txt{$ann};
+		print "Annotation: $bratid => $ann, $arg";
+		
+		$annotation = "<span corresp=\"#$lnk\" code=\"$type\" id=\"an-".$cnt++."\"  brat_id=\"$bratid\">".$th."</span>\n";
+		$br2tt{$bratid} = "an-".$cnt;
+		my $annnode = XML::LibXML->load_xml(
+			string => $annotation,
+		); if ( !$annnode ) { print FILE "Not able to parse annotation"; exit; };
+		$spans->addChild($annnode->firstChild);
+		$spans->appendText("\n");
+	} elsif ( $line =~ /^(T\d+)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) { 
+		# Text-bound annotation
 		$bratid = $1; $type = $2; $begin = $3; $end = $4; $th = $5; 
 		if ( $debug ) { print "$type: $begin-$end => $th"; };
 
@@ -207,8 +228,11 @@ while (<FILE>) {
 	
 		# Deal with word-internal annotations
 		$posi = "";
+		$br2txt{$bratid} = $th;
 	
-		if ( $th ne $spantext ) { print "Oops: $th ne $spantext"; };
+		$th =~ s/[\n\r]/ /g; $th =~ s/ +/ /g; $th =~ s/^ +| +$//g;
+		$spantext =~ s/[\n\r]/ /g; $spantext =~ s/ +/ /g; $spantext =~ s/^ +| +$//g;
+		if ( $th ne $spantext ) { print "Oops: \n{$th}\n=/=\n{$spantext}"; };
 
 		if ( $debug ) { print "  -- found at $mapto{$begin} - $mapto{$end} = $span = $spantext"; };
 		$annotation = "<span corresp=\"$span\" code=\"$type\" $auto id=\"an-".$cnt++."\"$posi  brat_id=\"$bratid\" range=\"$begin-$end\">".$th."</span>\n";
@@ -218,6 +242,8 @@ while (<FILE>) {
 		); if ( !$annnode ) { print FILE "Not able to parse annotation"; exit; };
 		$spans->addChild($annnode->firstChild);
 		$spans->appendText("\n");
+	} else {
+		print "Unknown type of Annotation: \n$line"; exit;
 	};
 	$br2tt{$bratid} = "an-".$cnt;
 	
