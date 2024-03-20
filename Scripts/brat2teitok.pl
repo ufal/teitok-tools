@@ -8,6 +8,7 @@ use XML::LibXML;
  GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'verbose' => \$verbose, # debugging mode
+            'keeppunct' => \$keeppunct, # keep punctuation marks inside the token
             'makesent' => \$makesent, # interpret new lines as sentence boundaries
             'makepar' => \$makepar, # interpret new lines as sentence boundaries
             'file=s' => \$filename, # language of input
@@ -55,27 +56,29 @@ for $i (0..length($text)-1){
     	$we = $i; $word = substr($text, $ws, $we-$ws);
 		$tokcnt = $cnt; 
 		
-		# Split off left punctuations
-		$befp = ""; 
-		while ( $word =~ /^(\p{isPunct})(.+)/ ) {
-			$punct = $1; $word = $2;
-			$begins{$tokcnt} = $ws; $ends{$tokcnt} = $ws;
-			$mapto{$ws} = $tokcnt;
-			$toktxt{$tokcnt} = $punct;
-    		$befp .= "<tok id=\"w-$tokcnt\" idx=\"$ws-$ws\">$punct</tok>";
-			$ws++; $tokcnt++; $cnt++;
-		};
+		if ( !$keeppunct ) {
+			# Split off left punctuations
+			$befp = ""; 
+			while ( $word =~ /^(\p{isPunct})(.+)/ ) {
+				$punct = $1; $word = $2;
+				$begins{$tokcnt} = $ws; $ends{$tokcnt} = $ws;
+				$mapto{$ws} = $tokcnt;
+				$toktxt{$tokcnt} = $punct;
+				$befp .= "<tok id=\"w-$tokcnt\" idx=\"$ws-$ws\">$punct</tok>";
+				$ws++; $tokcnt++; $cnt++;
+			};
 
-		# Split off right punctuations
-		$aftp = "";
-		while ( $word =~ /(.+)(\p{isPunct})+/ ) {
-			$punct = $2; $word = $1;
-			$pcnt = $tokcnt + 1;
-			$begins{$pcnt} = $we; $ends{$pcnt} = $we;
-			$toktxt{$pcnt} = $punct;
-			$mapto{$we} = $pcnt;
-    		$aftp .= "<tok id=\"w-$pcnt\" idx=\"$we-$we\">$punct</tok>";
-			$we--; $cnt++;
+			# Split off right punctuations
+			$aftp = "";
+			while ( $word =~ /(.+)(\p{isPunct})+/ ) {
+				$punct = $2; $word = $1;
+				$pcnt = $tokcnt + 1;
+				$begins{$pcnt} = $we; $ends{$pcnt} = $we;
+				$toktxt{$pcnt} = $punct;
+				$mapto{$we} = $pcnt;
+				$aftp .= "<tok id=\"w-$pcnt\" idx=\"$we-$we\">$punct</tok>";
+				$we--; $cnt++;
+			};
 		};
 
 		for ( $j=$ws; $j<$we+1; $j++ ) { $mapto{$j} = $tokcnt; };
@@ -172,6 +175,7 @@ while (<FILE>) {
 	if ( $line =~ /^#/ ) { next; };
 
 	if ( /^(R.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
+		# Relation
 		$bratid = $1; $type = $2; $arg1 = $3; $arg2 = $4; $th = $5; 
 		if ( $arg1 =~ /(.*):(.*)/ ) { 
 			$an = $1; $br1 = $2; $tmp = $br2tt{$br1} or $tmp = "[$br1]"; $id1 = "#$tmp"; 
@@ -186,6 +190,10 @@ while (<FILE>) {
 		); if ( !$annnode ) { print FILE "Not able to parse annotation"; exit; };
 		$links->addChild($annnode->firstChild);
 		$links->appendText("\n");
+	} elsif ( /^(E.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
+		# Event
+	} elsif ( /^(\*)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) {
+		# Equivalence
 	} elsif ( /^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/ ) { 
 		$bratid = $1; $type = $2; $begin = $3; $end = $4; $th = $5; 
 		if ( $debug ) { print "$type: $begin-$end => $th"; };
