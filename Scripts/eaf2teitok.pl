@@ -2,11 +2,13 @@ use Getopt::Long;
 use XML::LibXML;
 use Data::Dumper;
 use POSIX qw(strftime);
+use Encode qw(decode encode);
 
 # Convert EAF files to TEITOK/XML
  
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
+            'verbose' => \$verbose, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
             'file=s' => \$filename, # input file
             'output=s' => \$output, # output file
@@ -14,10 +16,25 @@ GetOptions ( ## Command line options
             'nospace' => \$nospace, # convert to whitespace-sensitive XML
             'nowho' => \$nowho, # do no put @who on utterances
             'renamewav' => \$renamewav, # rename wav to fileid
+            'skiptiers=s' => \$doskip, # do no put @who on utterances
+            'toktiers=s' => \$dotok, # do no put @who on utterances
             );
 
 $\ = "\n"; $, = "\t";
 
+if ( $doskip ) {
+	foreach $tmp ( split(",", $doskip ) ) {
+		$tierid = decode("utf-8", $tmp);
+		$skiptier{$tierid} = 1;
+	};
+};
+
+if ( $dotok ) {
+	foreach $tmp ( split(",", $dotok ) ) {
+		$tierid = decode("utf-8", $tmp);
+		$toktiers{$tierid} = 1;
+	};
+};
 
 if ( !$filename ) { $filename = shift; };
 ( $basename = $filename ) =~ s/.*\///; $basename =~ s/\..*//;
@@ -35,7 +52,7 @@ $raw =~ s/ xlink:.*?=".*?"//g;
 $raw =~ s/<\?.*?\?>//g;
 # $raw =~ s/xml://g;
 	
-if ( $debug ) { print $raw; };
+if ( $debug ) { print $raw; $verbose = 1; };
 
 
 # Check if this is valid XML to start with
@@ -102,17 +119,21 @@ foreach $node ( $eaf->findnodes("//TIME_ORDER/TIME_SLOT") ) {
 foreach $tier ( $eaf->findnodes("//TIER") ) {
 	$who = $tier->getAttribute("PARTICIPANT");
 	$tierid = $tier->getAttribute("TIER_ID");
+	if ( $skiptier{$tierid} ) {
+		if ( $verbose ) { print " -- Skipping tier: $tierid"; };
+		next; 
+	};
 	$parent = $tier->getAttribute("PARENT_REF");
 	if ( $parent ) {
 		$prnt{$tierid} = $parent;
 		$chln{$parent} .= "$tierid;";
-		if ( $debug ) {
+		if ( $verbose ) {
 			print "Depenent tier: $tierid => $parent";
 		};
 	};
 	if ( !$who ) { $who = $tierid; };
 	$annname = $tierid; $annname =~ s/[^a-zA-Z0-9]//g;
-	if ( $debug ) { print "tier: $who, $tierid"; };
+	if ( $verbose ) { print "tier: $who, $tierid"; };
 	$somedone = 0;
 	foreach $annotation ( $tier->findnodes("./ANNOTATION/ALIGNABLE_ANNOTATION") ) {
 		$annid = $annotation->getAttribute("ANNOTATION_ID")."";	
@@ -164,6 +185,9 @@ foreach my $key (sort {$a <=> $b} keys %utts) {
 			$utt = XML::LibXML::Element->new( "u" );
 			if ( !$nowho ) {
 				$utt->setAttribute("who", $ann->{'who'});
+			};
+			if (  $ann->{'tier'} && !$notier ) {
+				$utt->setAttribute("tier", $ann->{'tier'} );
 			};
 			$utt->setAttribute("start", $key/1000);
 			$utt->setAttribute("end", $i2t{$ann->{'end'}}/1000);

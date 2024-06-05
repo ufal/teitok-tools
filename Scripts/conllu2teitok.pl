@@ -97,7 +97,7 @@ sub makesent($sent, $tok) {
 	
 	$moresf = "";
 	while ( ( $key, $val ) = each (%sent) ) { 
-		$att = $key; $att =~ s/\[/_/g; $att =~ s/[^a-z_]//g;
+		$att = $key; $att =~ s/\[/_/g; $att =~ s/[^a-z_0-9]//g;
 		if ( $att ne 'id' && $att ne '' ) { $moresf .= " $att=\"".textprotect($val)."\""; };
 	};
 	$sentxml = "<s id=\"s-".$scnt++."\" $moresf>"; $dtokxml = "";
