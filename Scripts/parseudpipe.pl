@@ -35,6 +35,7 @@ GetOptions ( ## Command line options
             'force' => \$force, # run without checks
             'task=s' => \$task, # run as tagger / parser
             'token=s' => \$udptok, # use a login token for UDPIPE (billing)
+            'url=s' => \$url, # URL to use to "UDPIPE" (billing)
             'emptys' => \$emptys, # keep <s> nodes as empty nodes (with a @corresp)
             'modelroot=s' => \$modelroot, # folder where the models are
             'nocheck' => \$nocheck, # run the model, do not check if it exists
@@ -471,7 +472,9 @@ sub runudpipe ( $raw, $model, $udfile ) {
 				"data" => $rawpart,
 			);
 	
-			$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
+			if ( !$url ) {
+				$url = "http://lindat.mff.cuni.cz/services/udpipe/api/process";
+			};
 			$res = $ua->post( $url, \%form );
 			$jsdat = $res->decoded_content;
 			eval {
