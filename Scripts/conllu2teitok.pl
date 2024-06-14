@@ -102,9 +102,9 @@ sub makesent($sent, $tok) {
 	};
 	$sentxml = "<s id=\"s-".$scnt++."\" $moresf>"; $dtokxml = "";
 	for ( $i=1; $i<=$tokmax; $i++ ) {
-		$tokline = textprotect($tok{$i});
+		$tokline = textprotect($tok{$i}); $headf = "";
 		( $word, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc ) = split("\t", $tokline ); 
-		if ( $head ) { $headf = "head=\"w-".$tokid{$head}."\""; };
+		if ( $head && $head ne '' && $head ne '_' ) { $headf = "head=\"w-".$tokid{$head}."\""; };
 		if ( $mtok{$i} ) { 
 			( $mword, $mlemma, $mupos, $mxpos, $mfeats, $mhead, $mdeprel, $mdeps, $mmisc ) = split("\t", $mtok{$i}); 
 			if ( $mword =~ / / ) {
