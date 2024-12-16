@@ -1,5 +1,5 @@
 use Getopt::Long;
- use Data::Dumper;
+use Data::Dumper;
 use POSIX qw(strftime);
 use File::Find;
 use LWP::Simple;
@@ -7,7 +7,9 @@ use LWP::UserAgent;
 use JSON;
 use XML::LibXML;
 
-# Convert a UDPIPE corpus into a TEITOK corpus (to have it convert back to Manatee)
+# Convert a collection of text files into a TEITOK corpus
+# By first running UDPIPE over the files, and the converting 
+# the CoNLL-U files into TEITOK
 
 $scriptname = $0;
 
