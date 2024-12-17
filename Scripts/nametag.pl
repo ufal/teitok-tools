@@ -6,6 +6,9 @@ use URI::Escape;
 use JSON;
 use POSIX qw(strftime);
 
+# Script to run NameTag on a TEITOK/XML file
+# NameTag (https://lindat.mff.cuni.cz/services/nametag/) is a NER tool
+
 binmode(STDOUT, ":utf8");
 
 GetOptions ( ## Command line options

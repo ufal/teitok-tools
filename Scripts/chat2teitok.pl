@@ -1,13 +1,14 @@
-# Conversion from a CHAT transcript file (.cha) to the TEITOK format
-# Maarten Janssen, 2020
-
 use utf8;
 use XML::LibXML;
 use Data::Dumper;
 use Getopt::Long;
 use Encode qw(decode encode);
 
- GetOptions ( ## Command line options
+# Conversion from a CHAT transcript file (.cha) to the TEITOK format
+# Chat (https://ceapp.la.psu.edu/node/44) is a transcription format for spoken data
+# Maarten Janssen, 2020
+
+GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
             'output=s' => \$output, # name of the output file - if empty STDOUT

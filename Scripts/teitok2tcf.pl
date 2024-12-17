@@ -9,6 +9,7 @@ use XML::LibXML;
 use Encode;
 
 # Convert TEITOK documents to the WebLicht TCF format
+# TCF (https://github.com/weblicht/tcf-spec) is an interchange format used by WebLicht
 
 $scriptname = $0;
 

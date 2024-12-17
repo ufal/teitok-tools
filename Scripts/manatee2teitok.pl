@@ -6,7 +6,8 @@ use Getopt::Long;
  use Data::Dumper;
 use POSIX qw(strftime);
 
-# Convert a Manatee corpus into a TEITOK corpus (to have it convert back to Manatee)
+# Convert a Manatee corpus into a TEITOK corpus
+# Manatee is a corpus tool used as backend by SketchEngine (noSKE, Kontext)
 
 $scriptname = $0;
 

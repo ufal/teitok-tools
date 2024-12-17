@@ -8,7 +8,8 @@ use JSON;
 use XML::LibXML;
 use Encode;
 
-# Pars# Convert the known TEITOK differences to "pure" TEI/P5
+# Convert a TXM file to TEITOK/XML
+# TMX (https://help.transifex.com/en/articles/6838724-tmx-files-and-format) is a format for translation memories
 
 $scriptname = $0;
 

@@ -1,7 +1,10 @@
 use utf8;
 use Getopt::Long;
 
- GetOptions ( ## Command line options
+# Convert TextGrid file to TEITOK/XML
+# TextGrid (https://www.fon.hum.uva.nl/praat/manual/TextGrid_file_formats.html) is an audio transcription format from Praat
+
+GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
             'export=s' => \$export, # which tiers to export

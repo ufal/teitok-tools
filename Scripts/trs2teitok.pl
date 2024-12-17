@@ -4,6 +4,7 @@ use Data::Dumper;
 use POSIX qw(strftime);
 
 # Convert Transcriber TRS files to TEITOK/XML
+# TRS is an audio transcription format from Transcriber (https://trans.sourceforge.net/en/cmd.php)
  
 GetOptions ( ## Command line options
 	'debug' => \$debug, # debugging mode

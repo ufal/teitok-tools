@@ -1,6 +1,7 @@
 use Getopt::Long;
 
-# Pars# Convert the known TEITOK differences to "pure" TEI/P5
+# Convert a TBR file to TEITOK/XML
+# TBT is a format for interlinear glossed text from the Linguistic Toolbox
 
 $scriptname = $0;
 

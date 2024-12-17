@@ -1,11 +1,11 @@
-# hOCR2TEI.pl
-# convert a hOCR (pe from tesseract) to TEI
-# Maarten Janssen, 2016
-
 use XML::LibXML;
 use Getopt::Long;
 use utf8;
 use POSIX qw(strftime);
+
+# convert an hOCR file to TEI
+# hOCR (https://en.wikipedia.org/wiki/HOCR) is a rich text format for OCR documents
+# Maarten Janssen, 2016
 
 $\ = "\n"; $, = "\t";
 binmode(STDOUT, ":utf8");

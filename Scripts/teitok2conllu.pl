@@ -5,7 +5,8 @@ use File::Find;
 use XML::LibXML;
 use Encode;
 
-# Pars# Convert the known TEITOK differences to "pure" TEI/P5
+# Convert a TEITOK/XML file to CoNLL-U
+# CoNLL-U is a syntactic annotation format developed for UD (https://universaldependencies.org/format.html)
 
 $scriptname = $0;
 

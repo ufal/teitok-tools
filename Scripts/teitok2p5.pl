@@ -8,7 +8,7 @@ use JSON;
 use XML::LibXML;
 use Encode;
 
-# Pars# Convert the known TEITOK differences to "pure" TEI/P5
+# Convert the known TEITOK differences to "pure" TEI/P5
 
 $scriptname = $0;
 

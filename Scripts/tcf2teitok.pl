@@ -3,7 +3,8 @@ use XML::LibXML;
 use Data::Dumper;
 use POSIX qw(strftime);
 
-# Convert PML files to TEITOK/XML
+# Convert TCF files to TEITOK/XML
+# TCF (https://github.com/weblicht/tcf-spec) is an interchange format used by WebLicht
  
 GetOptions ( ## Command line options
 	'debug' => \$debug, # debugging mode

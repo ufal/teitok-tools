@@ -1,7 +1,7 @@
 use Getopt::Long;
 use XML::LibXML;
 
-# Convert a TEI document into plain text
+# Convert a TEI/XML document into plain text
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode

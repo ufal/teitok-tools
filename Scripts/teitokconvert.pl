@@ -5,6 +5,7 @@ use Getopt::Long;
 use utf8;
 
 # Envelop to coordinate the various conversion scripts
+
 $\ = "\n"; $, = "\t";
 binmode(STDOUT, ":utf8");
 

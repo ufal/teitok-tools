@@ -1,12 +1,12 @@
-# page2teitok.pl
-# convert a Page XML (pe from Transkribus) to TEI
-# Maarten Janssen, 2021
-
 use XML::LibXML;
 use Getopt::Long;
 use utf8;
 use Data::Dumper;
 use POSIX qw(strftime);
+
+# convert a Page XML to TEITOK/XML
+# PageXML is a rich format for HTR document, for instance from Transkribus
+# Maarten Janssen, 2021
 
 $\ = "\n"; $, = "\t";
 binmode(STDOUT, ":utf8");

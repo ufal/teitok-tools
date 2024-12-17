@@ -5,6 +5,7 @@ use POSIX qw(strftime);
 use Encode qw(decode encode);
 
 # Convert EAF files to TEITOK/XML
+# EAF (https://standards.clarin.eu/sis/views/view-spec.xq?id=SpecEAF) is an audio transcription from ELAN
  
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode

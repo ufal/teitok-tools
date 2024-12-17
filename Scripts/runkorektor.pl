@@ -8,7 +8,8 @@ use JSON;
 use XML::LibXML;
 use Encode;
 
-# Parse a tokenized corpus using UDPIPE
+# Spellcheck tokenized TEITOK/XML file using Korektor
+# Korektor (http://lindat.mff.cuni.cz/services/korektor) is a statistical spellchecker
 
 $scriptname = $0;
 

@@ -19,7 +19,7 @@ $scriptname = $0;
             'filename=s' => \$filename, # language of input
             'textnode=s' => \$mtxtelm, # what to use as the text to tokenize
             'tok=s' => \$toknode, # what to use as a token
-            'exlude=s' => \$exlude, # elements not to tokenize
+            'exclude=s' => \$exclude, # elements not to tokenize
             'segment=i' => \$sentsplit, # split into sentences (1=yes, 2=only)
             );
 

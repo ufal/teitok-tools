@@ -4,6 +4,7 @@ use Data::Dumper;
 use POSIX qw(strftime);
 
 # Convert FoLIA files to TEITOK/XML
+# Folia (https://proycon.github.io/folia/) is a linguistic annotation format
  
  GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode

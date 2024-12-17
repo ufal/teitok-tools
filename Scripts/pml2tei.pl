@@ -2,6 +2,7 @@ use Getopt::Long;
 use XML::LibXML;
 
 # Convert PML files to TEITOK/XML
+# PML is the file format developed for the Prague Dependency Treebank
  
  GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode

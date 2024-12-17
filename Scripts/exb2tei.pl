@@ -1,8 +1,9 @@
 use Getopt::Long;
 
-# Script to convert an EXMARaLDA text into TEITOK/XML
+# Script to convert an EXMARaLDA file into TEITOK/XML
+# EXB (https://standards.clarin.eu/sis/views/view-format.xq?id=fEXB) is a audio format from EXMARaLDA
 
- GetOptions ( ## Command line options
+GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'test' => \$test, # tokenize to string, do not change the database
             'file=s' => \$filename, # language of input

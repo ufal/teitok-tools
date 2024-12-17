@@ -8,7 +8,8 @@ use JSON;
 use XML::LibXML;
 use Encode;
 
-# Parse a tokenized corpus using UDPIPE
+# Parse a tokenized TEITOK file using UDPIPE
+# UDPIPE (https://lindat.mff.cuni.cz/services/udpipe/) is a dependency parser using Universal Dependencies
 
 $scriptname = $0;
 

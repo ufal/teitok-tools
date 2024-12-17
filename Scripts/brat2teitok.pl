@@ -3,9 +3,10 @@ use utf8;
 use Getopt::Long;
 use XML::LibXML;
 
-# Script to convert an EXMARaLDA text into TEITOK/XML
+# Script to convert an BRAT annotated file (txt + ann) into TEITOK/XML
+# Brat (https://brat.nlplab.org/) is a tool to create stand-off annotations
 
- GetOptions ( ## Command line options
+GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
             'verbose' => \$verbose, # debugging mode
             'keeppunct' => \$keeppunct, # keep punctuation marks inside the token

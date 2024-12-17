@@ -1,6 +1,7 @@
 use Getopt::Long;
 
-# Pars# Convert the known TEITOK differences to "pure" TEI/P5
+# Convert CoNLL-U files into TEITOK/XML
+# CoNLL-U is a syntactic annotation format developed for UD (https://universaldependencies.org/format.html)
 
 $scriptname = $0;
 
