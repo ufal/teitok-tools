@@ -67,7 +67,7 @@ for ( $i=0; $i<scalar @lines; $i = $i+4 ) {
 		$start = time2secs($1);
 		$end = time2secs($2);
 	};
-	$text = $lines[$i+2];
+	$text = xmlprotect($lines[$i+2]);
 	
 	$tei .= "<u n=\"$n\" id=\"u-$n\" start=\"$start\" end=\"$end\">$text</u>\n";
 };
@@ -93,3 +93,14 @@ sub time2secs($time) {
 	
 	return 0;
 };
+
+sub xmlprotect($string) {
+	$string = @_[0];
+	
+	$string =~ s/\&/&amp;/g;
+	$string =~ s/</&lt;/g;
+	$string =~ s/>/&gt;/g;
+	
+	return $string;
+	
+}
