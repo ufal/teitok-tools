@@ -4,7 +4,8 @@ import sys, os, string
 import argparse
 
 parser = argparse.ArgumentParser(description="Split XML into plain text and stand-off XML mark-up")
-parser.add_argument("infile", help="input XML file name (UTF-8)")
+parser.add_argument("infile", help="input audio file name (WAV or MP3)")
+parser.add_argument("outfolder", help="folder to place the XML file", default="xmlfiles")
 parser.add_argument("--confs", help="keep confidence scores", action="store_true")
 parser.add_argument("-l", "--language", help="language of the audio", type=str)
 args = parser.parse_args()
@@ -79,6 +80,6 @@ for seg in result['segments']:
 			last = False
 	utt.tail = "\n"
 
-xmlfile = os.path.splitext(os.path.basename(audiofile))[0] + ".xml"
+xmlfile = args.outfolder + '/' + os.path.splitext(os.path.basename(audiofile))[0] + ".xml"
 print("output written to " + xmlfile)
 xmlf.write(xmlfile,encoding="UTF-8")	
