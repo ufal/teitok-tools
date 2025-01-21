@@ -18,6 +18,7 @@ GetOptions ( ## Command line options
             'mixed' => \$mixed, # mixed language corpus - detect for each text
             'model=s' => \$model, # which UDPIPE model to use
             'lang=s' => \$lang, # language of the texts (if no model is provided)
+            'file=s' => \$file, # Only treat one file
             'orgfolder=s' => \$orgfolder, # Originals folder
             'outfolder=s' => \$outfolder, # Folders where parsed files will be placed
             'tmpfolder=s' => \$tmpfolder, # Folders where conllu files will be placed
@@ -28,11 +29,13 @@ $\ = "\n"; $, = "\t";
 $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 });
 
 if ( !$orgfolder ) { $orgfolder = "Originals"; };
-if ( !-d $orgfolder ) { print "No original files folder $orgfolder"; exit; };
+if ( !$file && !-d $orgfolder ) { print "No original files folder $orgfolder"; exit; };
 
 if ( !$outfolder ) { $outfolder = "xmlfiles"; };
 if ( !$tmpfolder ) { $tmpfolder = "udpipe"; };
 
+if ( -e $outfolder && !-d $outfolder ) { print "$outfolder is a file, not a directory"; exit; };
+if ( !-d $outfolder ) { mkdir($outfolder); };
 
 ( $tmp = $0 ) =~ s/Scripts.*/Resources\/udpipe-models.txt/;
 open FILE, $tmp; %udm = ();
@@ -59,13 +62,18 @@ if ( !$model ) {
 print "Using model: $model";
 
 mkdir($tmpfolder);
-find({ wanted => \&treatfile, follow => 1, no_chdir => 1 }, $orgfolder);
+if ( $file ) {
+	treatfile( $file );
+} else {
+	print "Treating folder: $orgfolder";
+	find({ wanted => \&treatfile, follow => 1, no_chdir => 1 }, $orgfolder);
+};
 
 STDOUT->autoflush();
 
 sub treatfile ( $fn ) {
-	$fn = $_;  $orgfile = $fn;
-	if ( !-d $fn ) { 
+	$fn = @_[0];  $orgfile = $fn; if ( !$fn ) { $fn = $_; };
+	if ( !-d $fn && substr($fn,0,1) ne '.' ) { 
 		print "\nTreating $fn";
 	
 		# read the text
@@ -82,7 +90,11 @@ sub treatfile ( $fn ) {
 			if ( !$mixed ) { $nomodel = 0; };
 		};
 		
-		if ( substr($outfolder,0,1) == "/" ) {
+		if ( $fn !~ /\// ) {
+			$udfile = $tmpfolder."/".$fn;
+		} elsif ( !$orgfolder ) {
+			$udfile = $tmpfolder."/".$fn;
+		} elsif ( substr($outfolder,0,1) == "/" ) {
 			( $udfile = $fn ) =~ s/.*$orgfolder/$tmpfolder/;
 		} else { 
 			( $udfile = $fn ) =~ s/$orgfolder/$tmpfolder/;
@@ -97,14 +109,14 @@ sub treatfile ( $fn ) {
 		print FILE $conllu;
 		close FILE;
 		
-		if ( substr($outfolder,0,1) == "/" ) {
-			( $xmlfile = $udfile ) =~ s/.*$orgfolder/$outfolder/;
-		} else { 
-			( $xmlfile = $fn ) =~ s/$orgfolder/$outfolder/;
+		if ( $fn !~ /\// ) {
+			$xmlfile = "$outfolder/$fn";
+		} else {
+			( $xmlfile = $fn ) =~ s/.*\//$outfolder\//;
+			( $tmp = $xmlfile ) =~ s/\/[^\/]+$//;
+			`mkdir -p $tmp`;
 		};
-		$xmlfile =~ s/\.conllu$/\.xml/;
-		( $tmp = $xmlfile ) =~ s/\/[^\/]+$//;
-		`mkdir -p $tmp`;
+		$xmlfile =~ s/\.[^.]+$/\.xml/;
 		$teitext = conllu2tei($udfile);
 		$now = strftime('%Y-%m-%d', localtime());
 		$teixml = "<TEI>

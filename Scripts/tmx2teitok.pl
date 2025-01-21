@@ -15,10 +15,10 @@ $scriptname = $0;
 
 GetOptions ( ## Command line options
             'debug' => \$debug, # debugging mode
-            'file=s' => \$filename, # which UDPIPE model to use
-            'output=s' => \$output, # which UDPIPE model to use
-            'morerev=s' => \$morerev, # language of input
-            'split' => \$split, # Split into 1 file per language
+            'file=s' => \$filename, # filename to convert
+            'output=s' => \$output, # filename for the converted file
+            'morerev=s' => \$morerev, # additional revision nodes to put in the header
+            'split' => \$split, # Split into 1 file per language (default is to create a single XML with multiple languages)
             );
 
 $\ = "\n"; $, = "\t";

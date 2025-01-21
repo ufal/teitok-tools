@@ -11,7 +11,7 @@ GetOptions ( ## Command line options
             'verbose' => \$verbose, # debugging mode
             'keeppunct' => \$keeppunct, # keep punctuation marks inside the token
             'makesent' => \$makesent, # interpret new lines as sentence boundaries
-            'makepar' => \$makepar, # interpret new lines as sentence boundaries
+            'makepar' => \$makepar, # interpret double new lines as paragraph boundaries
             'file=s' => \$filename, # language of input
             'plain=s' => \$plainfile, # location of the plain text file
             'morerev=s' => \$morerev, # more revision statement
@@ -29,7 +29,7 @@ if ( !-e $filename ) { print "Error: annotation file not found - $filename"; };
 if ( !$plainfile ) { ( $plainfile = $filename ) =~ s/\.ann$/.txt/; };
 if ( !$outfile ) { ( $outfile = $filename ) =~ s/\.ann$/.xml/; };
 
-if ( !-e $plainfile ) { sleep 5; };
+if ( !-e $plainfile ) { sleep 5; }; # Wait for conversion if input is not plain text (not used for BRAT)
 if ( !-e $plainfile ) { print "Error: text file not found - $plainfile"; };
 
 $/ = undef;
