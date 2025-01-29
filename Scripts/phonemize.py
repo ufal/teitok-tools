@@ -1,6 +1,7 @@
 from phonemizer.backend import EspeakBackend
 from phonemizer.punctuation import Punctuation
 from phonemizer.separator import Separator
+from langcodes import *
 import argparse
 import lxml.etree as etree
 import sys, os, string
@@ -13,12 +14,14 @@ parser.add_argument("-s", "--sep", help="separator between phones", type=str, de
 parser.add_argument("-a", "--attr", help="attribute to your for transcription", type=str, default="phon")
 args = parser.parse_args()
 
+langcode = Language.find(args.lang)
+
 xmlf = etree.parse(args.file)
 # separate phones by a space and ignoring words boundaries
 separator = Separator(phone=args.sep, word=None)
 
 # initialize the espeak backend for English
-backend = EspeakBackend(args.lang)
+backend = EspeakBackend(langcode)
 
 for tok in xmlf.iter('tok'):
 	word = tok.text
