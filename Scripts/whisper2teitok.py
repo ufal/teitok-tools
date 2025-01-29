@@ -7,6 +7,10 @@ parser = argparse.ArgumentParser(description="Split XML into plain text and stan
 parser.add_argument("infile", help="input audio file name (WAV or MP3)")
 parser.add_argument("-o", "--outfolder", help="folder to place the XML file", default="xmlfiles")
 parser.add_argument("--confs", help="keep confidence scores", action="store_true")
+parser.add_argument("--disfluencies", help="transcribe disfluencies", action="store_true")
+parser.add_argument("--model", help="whisper model to use", default="medium")
+parser.add_argument("--device", help="device to use", default="cpu")
+parser.add_argument("--vad", help="whether to use VAD")
 parser.add_argument("-l", "--language", help="language of the audio", type=str)
 args = parser.parse_args()
 
@@ -17,9 +21,19 @@ audio = whisper.load_audio(audiofile)
 audioext = os.path.splitext(os.path.basename(audiofile))[1]
 audiobase = os.path.basename(audiofile)
 
-model = whisper.load_model("medium", device="cpu")
+# Determine the model with options
+modelsize = args.model
+modeloptions = {}
+modeloptions['device'] = args.device
+model = whisper.load_model(modelsize, **modeloptions)
 
-result = whisper.transcribe(model, audio, language=args.language)
+# Determine the transcription options
+options = { 'model': audio, 'language': args.language }
+if args.disfluencies:
+	options['detect_disfluencies'] = True
+
+# Transcribe the audio file
+result = whisper.transcribe(**options)
 
 xmlstring = "<TEI/>"	
 xmlf = etree.ElementTree(etree.fromstring(xmlstring))
