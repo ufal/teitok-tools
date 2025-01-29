@@ -14,11 +14,21 @@ parser.add_argument("-s", "--sep", help="separator between phones", type=str, de
 parser.add_argument("-a", "--attr", help="attribute to your for transcription", type=str, default="phon")
 args = parser.parse_args()
 
-langcode = Language.find(args.lang) # .to_alpha3()
 
 xmlf = etree.parse(args.file)
 # separate phones by a space and ignoring words boundaries
 separator = Separator(phone=args.sep, word=None)
+
+langnode = xmlf.find("//langUsage/language")
+langname = args.lang
+if langnode is not None and not langname: 
+	langname = langnode.text
+if not langname:
+	print ("Please specify a language (if not specified in XML)")
+	exit()
+langcode = Language.find(langname) # .to_alpha3()
+
+print ("Language: ", langcode, langcode.display_name())
 
 # initialize the espeak backend for English
 backend = EspeakBackend(langcode)
