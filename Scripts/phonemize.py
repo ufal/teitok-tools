@@ -28,10 +28,10 @@ if not langname:
 	exit()
 langcode = Language.find(langname) # .to_alpha3()
 
-print ("Language: ", langcode, langcode.display_name())
+print ("Language: ", str(langcode), langcode.display_name())
 
 # initialize the espeak backend for English
-backend = EspeakBackend(langcode)
+backend = EspeakBackend(str(langcode))
 
 for tok in xmlf.iter('tok'):
 	word = tok.text
