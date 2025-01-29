@@ -14,7 +14,7 @@ parser.add_argument("-s", "--sep", help="separator between phones", type=str, de
 parser.add_argument("-a", "--attr", help="attribute to your for transcription", type=str, default="phon")
 args = parser.parse_args()
 
-langcode = Language.find(args.lang).to_alpha3()
+langcode = Language.find(args.lang) # .to_alpha3()
 
 xmlf = etree.parse(args.file)
 # separate phones by a space and ignoring words boundaries
