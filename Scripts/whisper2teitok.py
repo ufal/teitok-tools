@@ -77,21 +77,23 @@ for seg in result['segments']:
 		if withconf:
 			tok.set("conf", str(word['conf']))
 		tok.tail = " "
-		# Split off punctuation marks
-		last = True
-		while tok.text[-1] in string.punctuation:
-			old = tok.text
-			punct = etree.Element("tok")
-			punct.text = old[-1]
-			tokcnt = tokcnt + 1
-			punct.set("id", "w-"+str(tokcnt))
-			index = list(utt).index(tok)
-			utt.insert(index+1, punct)
-			tok.text = old[0:-1]
-			if last:
-				punct.tail = " "
-				tok.tail = ""
-			last = False
+		# [*] is a disfluency code in whisper
+		if tok.text is not "[*]":
+			# Split off punctuation marks
+			last = True
+			while tok.text[-1] in string.punctuation:
+				old = tok.text
+				punct = etree.Element("tok")
+				punct.text = old[-1]
+				tokcnt = tokcnt + 1
+				punct.set("id", "w-"+str(tokcnt))
+				index = list(utt).index(tok)
+				utt.insert(index+1, punct)
+				tok.text = old[0:-1]
+				if last:
+					punct.tail = " "
+					tok.tail = ""
+				last = False
 	utt.tail = "\n"
 
 xmlfile = args.outfolder + '/' + os.path.splitext(os.path.basename(audiofile))[0] + ".xml"
