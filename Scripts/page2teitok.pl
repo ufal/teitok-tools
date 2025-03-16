@@ -178,11 +178,11 @@ if ( !$noretoken ) {
 	$text =~ s/<tok([^<>]*)>([^<>]+)<\/tok><tok[^<>]*>-<\/tok>\s*(<lb[^<>]*\/>)\s*<tok([^<>]*)>([^<>]+)<\/tok>/<tok form="\2\5"><gtok\1>\2-<\/gtok>\3<gtok\4>\5<\/gtok><\/tok>/gxmi;
 };
 
-$when = strftime "%Y-%m-%d", localtime;
+$today = strftime "%Y-%m-%d", localtime;
 $teixml = "<TEI>
 <teiHeader>
 	<revisionDesc>
-		<change when=\"$when\" who=\"pages2teitok\">Converted from PageXML file $basename.xml</change>
+		<change when=\"$today\" who=\"pages2teitok\">Converted from PageXML file $basename.xml</change>
 	</revisionDesc>
 </teiHeader>
 <facsimile>

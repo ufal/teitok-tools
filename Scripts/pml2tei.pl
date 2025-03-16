@@ -1,5 +1,6 @@
 use Getopt::Long;
 use XML::LibXML;
+use POSIX qw(strftime);
 
 # Convert PML files to TEITOK/XML
 # PML is the file format developed for the Prague Dependency Treebank
@@ -14,6 +15,7 @@ use XML::LibXML;
 
 $\ = "\n"; $, = "\t";
 
+$today = strftime "%Y-%m-%d", localtime;
 
 if ( !$filename ) { $filename = shift; };
 if ( $filename =~ /\.[amw]$/ ) { $filename =~ s/\..+?$/.w/; };

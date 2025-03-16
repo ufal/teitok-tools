@@ -159,8 +159,8 @@ if ( $doc->findnodes("//parsing") ) {
 
 # Add the revision statement
 $revnode = makenode($tei, "/TEI/teiHeader/revisionDesc/change[\@who=\"tcf2teitok\"]");
-$when = strftime "%Y-%m-%d", localtime;
-$revnode->setAttribute("when", $when);
+$today = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $today);
 $revnode->appendText("Converted from TCF file $basename.xml");
 
 if ( $debug ) {

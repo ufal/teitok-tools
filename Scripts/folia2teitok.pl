@@ -235,8 +235,8 @@ foreach $noknow ( @noknows ) {
 
 # Add the revision statement
 $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"folia2teitok\"]");
-$when = strftime "%Y-%m-%d", localtime;
-$revnode->setAttribute("when", $when);
+$today = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $today);
 $revnode->appendText("Converted from FoLiA file $basename.xml");
 
 if ( $debug ) {

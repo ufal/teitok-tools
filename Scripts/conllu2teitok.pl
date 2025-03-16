@@ -1,4 +1,5 @@
 use Getopt::Long;
+use POSIX qw(strftime);
 
 # Convert CoNLL-U files into TEITOK/XML
 # CoNLL-U is a syntactic annotation format developed for UD (https://universaldependencies.org/format.html)
@@ -32,6 +33,7 @@ if ( $split && $indoc ) {
 };
 writeit($output, $teixml); # Write out (the remaining) XML lines
 
+$today = strftime "%Y-%m-%d", localtime;
 
 sub conllu2tei($fn) {
 	$fn = @_[0]; $tokcnt = 1; %tok = (); %mtok = (); %etok = (); %etok = (); %sent = (); $scnt=1; $mtokcnt=1; $prevdoc = "";
@@ -156,7 +158,7 @@ sub writeit($outfile = $output) {
 	print OUTFILE "<TEI>
 	<teiHeader>
 		<notesStmt><note n=\"orgfile\">$basename.conllu</note></notesStmt>
-		<revisionDesc><change who=\"conllu2teitok\" when=\"$now\">Converted from CoNLL-U $filename</change></revisionDesc>
+		<revisionDesc><change who=\"conllu2teitok\" when=\"$today\">Converted from CoNLL-U $filename</change></revisionDesc>
 	</teiHeader>
 	<text>
 	$teixml

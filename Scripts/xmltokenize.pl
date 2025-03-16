@@ -537,8 +537,8 @@ if ( $toknode ne 'tok' || $enumerate ) {
 # Add a revisionDesc to indicate the file was tokenized (for TEI files)
 if ( $filetype eq 'TEI' ) {
 	$revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"xmltokenize\"]");
-	$when = strftime "%Y-%m-%d", localtime;
-	$revnode->setAttribute("when", $when);
+	$today = strftime "%Y-%m-%d", localtime;
+	$revnode->setAttribute("when", $today);
 	if ( $sentsplit == 2 ) {
 		$revnode->appendText("split into sentences using xmltokenize.pl");
 	} elsif ( $sentsplit == 1 ) {

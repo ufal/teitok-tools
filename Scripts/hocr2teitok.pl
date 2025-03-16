@@ -135,8 +135,8 @@ foreach $elm ( $doc->findnodes("//*[contains(\@title, 'bbox')]") ) {
 
 # Add the revision statement
 $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"hocr2teitok\"]");
-$when = strftime "%Y-%m-%d", localtime;
-$revnode->setAttribute("when", $when);
+$today = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $today);
 $revnode->appendText("Converted from hOCR file $basename.xml");
 
 $teixml = $doc->toString;

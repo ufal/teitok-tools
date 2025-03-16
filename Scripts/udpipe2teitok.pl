@@ -118,7 +118,7 @@ sub treatfile ( $fn ) {
 		};
 		$xmlfile =~ s/\.[^.]+$/\.xml/;
 		$teitext = conllu2tei($udfile);
-		$now = strftime('%Y-%m-%d', localtime());
+		$today = strftime('%Y-%m-%d', localtime());
 		$teixml = "<TEI>
 <teiHeader>
 	<fileDesc>
@@ -127,7 +127,7 @@ sub treatfile ( $fn ) {
 		</profileDesc>
 	</fileDesc>
 	<notesStmt><note n=\"orgfile\">$orgfile</note></notesStmt>
-	<revisionDesc><change who=\"udpipe\" when=\"$now\">dependency parsed with the udpipe web-service using model $model</change></revisionDesc>
+	<revisionDesc><change who=\"udpipe\" when=\"$today\">dependency parsed with the udpipe web-service using model $model</change></revisionDesc>
 </teiHeader>
 <text>
 $teitext

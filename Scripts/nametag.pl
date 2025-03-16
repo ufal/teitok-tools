@@ -154,8 +154,8 @@ while ( ($nerid, $ids ) = each(%nerlist) ) {
 
 # Add a revisionDesc to indicate the file was tokenized
 $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"nametag\"]");
-$when = strftime "%Y-%m-%d", localtime;
-$revnode->setAttribute("when", $when);
+$today = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $today);
 $revnode->appendText("NER using NameTag model $model");
 
 $xmlfile = $doc->toString;

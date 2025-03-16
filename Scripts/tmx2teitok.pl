@@ -25,6 +25,8 @@ $\ = "\n"; $, = "\t";
 if ( !$filename ) { $filename = shift; };
 ( $basename = $filename ) =~ s/.*\///; $basename =~ s/\..*//;
 
+$today = strftime "%Y-%m-%d", localtime;
+
 $parser = XML::LibXML->new(); $doc = "";
 eval {
 	$doc = $parser->load_xml(location => $filename);

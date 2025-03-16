@@ -2,6 +2,7 @@ import sys
 import os
 import base64
 from docx import Document
+from docx.opc.exceptions import PackageNotFoundError
 from lxml import etree
 from datetime import date
 import zipfile
@@ -58,24 +59,30 @@ def get_color(run):
     """Extract font color from the run."""
     if run.font.color and run.font.color.rgb:
         return f"color: #{run.font.color.rgb};"
+    if run.style and run.style.font.color and run.style.font.color.rgb:
+        return f"color: #{run.style.font.color.rgb};"
     return ""
 
 def get_font_size(run):
     """Extract font size in points."""
-    return f"font-size: {run.font.size.pt}pt;" if run.font.size else ""
+    if run.font.size:
+        return f"font-size: {run.font.size.pt}pt;"
+    if run.style and run.style.font.size:
+        return f"font-size: {run.style.font.size.pt}pt;"
+    return  ""
 
 def get_text_styles(run):
     """Extract text styles like bold, italic, underline, superscript."""
     styles = []
-    if run.bold:
+    if run.bold or ( run.style and run.style.font.bold ):
         styles.append("font-weight: bold;")
-    if run.italic:
+    if run.italic or ( run.style and run.style.font.italic ):
         styles.append("font-style: italic;")
-    if run.underline:
+    if run.underline or ( run.style and run.style.font.underline ):
         styles.append("text-decoration: underline;")
-    if run.font.superscript:
+    if run.font.superscript or ( run.style and run.style.font.superscript ):
         styles.append("vertical-align: super; font-size: smaller;")
-    if run.font.subscript:
+    if run.font.subscript or ( run.style and run.style.font.subscript ):
         styles.append("vertical-align: sub; font-size: smaller;")
     return " ".join(styles)
 
@@ -90,6 +97,13 @@ def get_background_color(para):
     except Exception:
         pass
     return ""
+
+def get_tag(element):
+    tagname = element.tag
+    for ns in namespaces:
+        nst = namespaces[ns]
+        tagname = tagname.replace("{"+nst+"}", "")
+    return tagname
 
 def process_run(run):
     """Convert a run (styled text) to TEI <hi> with a single style attribute."""
@@ -107,7 +121,7 @@ def process_run(run):
         for footnote_ref in run_xml.findall(".//w:footnoteReference", namespaces):
             footnote_id = footnote_ref.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id")
             if footnote_id in footnote_map:
-                # Replace with a clickable link
+                # create a <note> with the text inside for the footnote
                 text_elem = etree.Element("note")
                 text_elem.set("id", "fn-" + str(footnote_id))
                 text_elem.text = footnote_map.get(footnote_id)
@@ -115,14 +129,6 @@ def process_run(run):
         text_elem.text = run.text
 
     return text_elem
-
-def extract_hyperlinks(doc):
-    """Extract all hyperlinks from the document."""
-    hyperlinks = {}
-    for rel in doc.part.rels:
-        if "hyperlink" in doc.part.rels[rel].reltype:
-            hyperlinks[doc.part.rels[rel].rId] = doc.part.rels[rel].target_ref
-    return hyperlinks
 
 def append_mixed_content(src, dst):
     """ Append all children and text content from `src` to `dst` in the correct order. """
@@ -145,7 +151,7 @@ def append_mixed_content(src, dst):
         if child.tail:
             copied_child.tail = child.tail  # Preserve tail text after each element
             
-def process_paragraph(para, hyperlinks):
+def process_paragraph(para):
     """Convert a paragraph to TEI."""
 
     para_elem = etree.Element("p")
@@ -156,16 +162,30 @@ def process_paragraph(para, hyperlinks):
     if background_color:
         para_elem.set("style", background_color.strip())
     
-    lasthi = para_elem
+    run_map = {}
     for run in para.runs:
-        # Check if run is part of a hyperlink
-        r_id = run._element.getparent().get("r:id")
-        if r_id and r_id in hyperlinks:
-            ref_elem = etree.Element("ref", target=hyperlinks[r_id])
-            ref_elem.text = run.text
-            para_elem.append(ref_elem)
-        else:
-            hi = process_run(run)
+        run_map[run._element] = run
+    
+    lasthi = para_elem
+    for child in para._element:
+        tagname = get_tag(child)
+        if tagname in [ "pPr", "proofErr", "bookmarkStart", "bookmarkEnd", "smartTag" ] : # things that can be ignored
+            pass
+        elif tagname == "hyperlink": # Hyperlinks
+            ns = '{' + namespaces['r'] + '}'
+            rId = child.get(f"{ns}id")
+            if rId in hyperlink_map:
+                url = hyperlink_map[rId]
+                ref_elem = etree.Element("ref")
+                ref_elem.set("target", url)
+                hyperlinktext = ""
+                for run_xml in child.findall(".//w:t", namespaces=namespaces):
+                    hyperlinktext = hyperlinktext + run_xml.text
+                ref_elem.text = hyperlinktext # This should parse a full run inside a <w:hyperlink> if it exists
+                para_elem.append(ref_elem)
+        elif tagname == "r": # Styled elements
+            r_id = child.getparent().get("r:id")
+            hi = process_run(run_map[child])
             if len(hi) > 0 or ( hi.text is not None and hi.text):
                 # Skip empty elements
                 if not hi.attrib: 
@@ -178,10 +198,12 @@ def process_paragraph(para, hyperlinks):
                 else:
                     # Add the new hi element
                     para_elem.append(hi)
-                    lasthi = hi                
+                    lasthi = hi      
+        else:
+            print("Unhandled paragraph child: ", tagname)          
 
         # Handle images
-        for drawing in run._element.findall(".//w:drawing", namespaces=namespaces):
+        for drawing in child.findall(".//w:drawing", namespaces=namespaces):
             blip = drawing.find(".//a:blip", namespaces=namespaces)
             if blip is not None:
                 relationship_id = blip.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed")
@@ -191,6 +213,7 @@ def process_paragraph(para, hyperlinks):
                     if image_filename:
                         # Add a <figure> and <graphic> element to the TEI
                         figure = etree.SubElement(para_elem, "figure")
+                        figure.set("id", relationship_id)
                         graphic = etree.SubElement(figure, "graphic", url=os.path.join(image_reldir, image_filename))
     
     # Skip the paragraph if it is empty
@@ -208,13 +231,19 @@ def process_table(table):
         for cell in row.cells:
             cell_elem = etree.Element("cell")
             for para in cell.paragraphs:
-                processed_para = process_paragraph(para, {})
+                processed_para = process_paragraph(para)
                 if processed_para is not None:  # Explicit check
                     cell_elem.append(processed_para)
             row_elem.append(cell_elem)
         table_elem.append(row_elem)
 
     return table_elem
+
+def extract_hyperlinks(doc):
+    for rId in doc.part.rels:
+        rel = doc.part.rels[rId]
+        if hasattr(rel, "target_ref"):
+            hyperlink_map[rId] = rel.target_ref
 
 def extract_footnotes(doc):
     """Extract footnotes manually from docx XML."""
@@ -250,12 +279,22 @@ def extract_footnotes(doc):
     return footnotes_elem
 
 def convert_docx_to_tei(docx_file, output_tei_file):
-    doc = Document(docx_file)
+
+    try:
+        # Attempt to open the .docx file
+        doc = Document(docx_file)
+    except PackageNotFoundError:
+        print(f"Error: The file '{docx_file}' is not a valid .docx file or is corrupted.")
+        sys.exit(1)
+    except FileNotFoundError:
+        print(f"Error: The file '{docx_file}' does not exist.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        sys.exit(1)
 
     image_map = extract_images_and_map_relationships(docx_file)
     footnotes = extract_footnotes(doc)
-    
-    # Extract hyperlinks
     hyperlinks = extract_hyperlinks(doc)
 
     XML_NS = "http://www.w3.org/XML/1998/namespace"
@@ -292,7 +331,7 @@ def convert_docx_to_tei(docx_file, output_tei_file):
     # Iterate through the document body in order
     for element in doc._element.findall(".//w:body/*", namespaces=namespaces):
         if element.tag.endswith("p"):  # Paragraph
-            processed_element = process_paragraph(para_map.get(element), hyperlinks)
+            processed_element = process_paragraph(para_map.get(element))
         elif element.tag.endswith("tbl"):  # Table
             processed_element = process_table(table_map.get(element))
         elif element.tag.endswith("sectPr"):  # Table
@@ -316,11 +355,16 @@ def convert_docx_to_tei(docx_file, output_tei_file):
 
 # Command-line usage
 if len(sys.argv) < 1:
-    print("Usage: python convert_docx_to_tei.py <input.docx> ")
+    print("Usage: python docx2tei.py <input.docx> ")
     sys.exit(1)
 
 docx_filename = sys.argv[1]
 fileid = os.path.splitext(os.path.basename(docx_filename))[0]
+
+# Command-line usage
+if not os.path.isfile(docx_filename):
+    print("No such file: ", docx_filename)
+    sys.exit(1)
 
 # Determine default TEITOK style filenames or default to generic names
 if len(sys.argv) > 2: tei_filename = sys.argv[2] 
@@ -332,13 +376,16 @@ else:
     else:
         tei_filename = os.path.splitext(docx_filename)[0] + ".xml"
 
+xmlid = os.path.splitext(os.path.basename(tei_filename))[0]
+
 if len(sys.argv) > 3: image_dir = sys.argv[3] 
 else:
     index = tei_filename.find("xmlfiles")
     if index != -1:
-        image_dir = tei_filename[:index] + "Graphics/" + fileid
+        image_dir = tei_filename[:index] + "Graphics/" + xmlid
     else:
         image_dir = os.path.splitext(tei_filename)[0] + "_files"
+
 
 # Determine what to put as the link for images
 path = Path(image_dir)
@@ -350,6 +397,7 @@ else:
 # Define global variables to hold the image and footnote references
 image_map = {}
 footnote_map = {}
+hyperlink_map  = {}
 
 namespaces = {
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",

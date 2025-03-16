@@ -1,5 +1,6 @@
 use utf8;
 use Getopt::Long;
+use POSIX qw(strftime);
 
 # Convert TextGrid file to TEITOK/XML
 # TextGrid (https://www.fon.hum.uva.nl/praat/manual/TextGrid_file_formats.html) is an audio transcription format from Praat
@@ -16,6 +17,8 @@ GetOptions ( ## Command line options
             );
 
 $\ = "\n"; $, = "\t";
+
+$today = strftime "%Y-%m-%d", localtime;
 
 binmode STDOUT, "utf8:";
 

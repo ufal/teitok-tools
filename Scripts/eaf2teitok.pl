@@ -212,8 +212,8 @@ foreach my $key (sort {$a <=> $b} keys %utts) {
 
 # Add the revision statement
 $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"eaf2teitok\"]");
-$when = strftime "%Y-%m-%d", localtime;
-$revnode->setAttribute("when", $when);
+$today = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $today);
 $revnode->appendText("Converted from ELAN file $basename.eaf");
 
 if ( $debug ) {

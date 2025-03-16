@@ -284,8 +284,8 @@ foreach $spans ( $doc->findnodes("//spanGrp") ) {
 
 # Add the revision statement
 $revnode = makenode($doc, "/TEI/teiHeader/revisionDesc/change[\@who=\"teitok2p5\"]");
-$when = strftime "%Y-%m-%d", localtime;
-$revnode->setAttribute("when", $when);
+$today = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $today);
 $revnode->appendText("Converted from TEITOK file $basename.xml");
 
 # Deal with the namespace

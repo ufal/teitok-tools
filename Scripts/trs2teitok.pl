@@ -109,8 +109,8 @@ foreach $episode ( $doc->findnodes("//Episode") ) {
 
 # Add the revision statement
 $revnode = makenode($tei, "/TEI/teiHeader/revisionDesc/change[\@who=\"trs2teitok\"]");
-$when = strftime "%Y-%m-%d", localtime;
-$revnode->setAttribute("when", $when);
+$today = strftime "%Y-%m-%d", localtime;
+$revnode->setAttribute("when", $today);
 $revnode->appendText("Converted from TRS file $basename.trs");
 
 if ( $debug ) {

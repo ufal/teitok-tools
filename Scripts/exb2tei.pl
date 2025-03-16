@@ -1,4 +1,5 @@
 use Getopt::Long;
+use POSIX qw(strftime);
 
 # Script to convert an EXMARaLDA file into TEITOK/XML
 # EXB (https://standards.clarin.eu/sis/views/view-format.xq?id=fEXB) is a audio format from EXMARaLDA
@@ -12,6 +13,8 @@ GetOptions ( ## Command line options
             );
 
 $/ = undef; $\ = "\n"; $, = "\t";
+
+$today = strftime "%Y-%m-%d", localtime;
 
 if ( !$filename ) { $filename = shift; };
 

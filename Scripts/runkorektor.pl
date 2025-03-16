@@ -115,8 +115,8 @@ sub treatfile ( $fn ) {
 		
 		# Add the revision statement
 		$revnode = makenode($xml, "/TEI/teiHeader/revisionDesc/change[\@who=\"korektor\"]");
-		$when = strftime "%Y-%m-%d", localtime;
-		$revnode->setAttribute("when", $when);
+		$today = strftime "%Y-%m-%d", localtime;
+		$revnode->setAttribute("when", $today);
 		$revnode->appendText("Spell-checked with Korektor using $model");
 		
 		$outfile = $orgfile;

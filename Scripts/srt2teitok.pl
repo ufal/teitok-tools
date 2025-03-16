@@ -27,6 +27,8 @@ $\ = "\n"; $, = "\t";
 if ( !$filename ) { $filename = shift; };
 ( $basename = $filename ) =~ s/.*\///; $basename =~ s/\..*//;
 
+$today = strftime "%Y-%m-%d", localtime;
+
 binmode(STDOUT, ":utf8");
 
 open FILE, $filename;
