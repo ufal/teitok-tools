@@ -1,6 +1,7 @@
 import sys
 import os
 import base64
+import argparse
 from docx import Document
 from docx.opc.exceptions import PackageNotFoundError
 from lxml import etree
@@ -312,13 +313,13 @@ def convert_docx_to_tei(docx_file, output_tei_file):
     notesstmt = etree.SubElement(filedesc, "notesStmt")
     note = etree.SubElement(notesstmt, "note")
     note.set("n", "orgfile")
-    note.text = docx_file
+    note.text = orgfile
     revisiondesc = etree.SubElement(tei_header, "revisionDesc")
     change = etree.SubElement(revisiondesc, "change")
     change.set("who", "docx2tei")
     today = str(date.today())
     change.set("when", today)
-    change.text = "Converted from DOCX file"
+    change.text = "Converted from DOCX file " + docx_file
 
     # Map the docx elements onto a map
     para_map = {}
@@ -353,12 +354,17 @@ def convert_docx_to_tei(docx_file, output_tei_file):
 
     print(f"Conversion complete! Saved as {output_tei_file}")
 
-# Command-line usage
-if len(sys.argv) < 1:
-    print("Usage: python docx2tei.py <input.docx> ")
-    sys.exit(1)
+parser = argparse.ArgumentParser(description="Convert a DOCX file to a (TEITOK style) TEI/XML file")
+parser.add_argument("file", help="DOCX file to convert")
+parser.add_argument("--force", help="force when output file exists", action="store_true")
+parser.add_argument("--debug", help="debug mode", action="store_true")
+parser.add_argument("-o", "--output", help="ouput TEI filename", type=str, default="")
+parser.add_argument("-i", "--image_dir", help="directory to store the images in", type=str, default="")
+parser.add_argument("--orgfile", help="original file that the DOCX was created from", type=str, default="")
+args = parser.parse_args()
 
-docx_filename = sys.argv[1]
+
+docx_filename = args.file
 fileid = os.path.splitext(os.path.basename(docx_filename))[0]
 
 # Command-line usage
@@ -367,8 +373,8 @@ if not os.path.isfile(docx_filename):
     sys.exit(1)
 
 # Determine default TEITOK style filenames or default to generic names
-if len(sys.argv) > 2: tei_filename = sys.argv[2] 
-else:
+tei_filename = args.output
+if not tei_filename:
     index = docx_filename.find("Originals")
     if index != -1:
         tei_filename = docx_filename[:index] + "xmlfiles/" + fileid + ".xml"
@@ -378,14 +384,17 @@ else:
 
 xmlid = os.path.splitext(os.path.basename(tei_filename))[0]
 
-if len(sys.argv) > 3: image_dir = sys.argv[3] 
-else:
+image_dir = args.image_dir 
+if not image_dir:
     index = tei_filename.find("xmlfiles")
     if index != -1:
         image_dir = tei_filename[:index] + "Graphics/" + xmlid
     else:
         image_dir = os.path.splitext(tei_filename)[0] + "_files"
 
+orgfile = args.orgfile
+if not orgfile:
+    orgfile = docx_filename
 
 # Determine what to put as the link for images
 path = Path(image_dir)
