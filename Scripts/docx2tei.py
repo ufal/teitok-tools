@@ -155,7 +155,7 @@ def normalize_line_height(line_spacing, line_spacing_rule):
         return line_spacing
     else:
         # Default line height (e.g., single spacing)
-        return 1.0
+        return 1.2
 
 def get_background_color(para):
     return ""
