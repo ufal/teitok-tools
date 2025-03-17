@@ -12,6 +12,9 @@ import zipfile
 from pathlib import Path
 from io import BytesIO
 
+# TODO: 
+# - page breaks
+
 def extract_images_and_map_relationships(docx_path):
     """
     Extract images from a DocX file and map relationship IDs to image filenames.
@@ -124,7 +127,10 @@ def paragraph_to_css(para):
     if para.paragraph_format.space_after:
         css.append(f"margin-bottom: {para.paragraph_format.space_after.pt}pt;")
     if para.paragraph_format.line_spacing:
-        css.append(f"line-height: {para.paragraph_format.line_spacing};")
+        line_spacing = para.paragraph_format.line_spacing
+        line_spacing_rule = para.paragraph_format.line_spacing_rule
+        line_height = normalize_line_height(line_spacing, line_spacing_rule)
+        css.append(f"line-height: {line_height};")
     
     """Extract background color from a paragraph's XML structure."""
     shd = para._element.find(".//w:shd", namespaces)
@@ -136,6 +142,20 @@ def paragraph_to_css(para):
     pPr = para._element.pPr  # Access paragraph properties
 
     return " ".join(css)
+
+def normalize_line_height(line_spacing, line_spacing_rule):
+    """
+    Normalize the line height value from DOCX to a reasonable CSS value.
+    """
+    if line_spacing_rule == 4:  # WD_LINE_SPACING.EXACTLY
+        # Convert from twentieths of a point to points
+        return line_spacing / 20
+    elif line_spacing_rule == 5:  # WD_LINE_SPACING.MULTIPLE
+        # Return the multiplier directly
+        return line_spacing
+    else:
+        # Default line height (e.g., single spacing)
+        return 1.0
 
 def get_background_color(para):
     return ""
