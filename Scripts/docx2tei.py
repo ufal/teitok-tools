@@ -4,6 +4,8 @@ import base64
 import argparse
 from docx import Document
 from docx.opc.exceptions import PackageNotFoundError
+from docx.oxml import parse_xml
+from docx.oxml.ns import qn
 from lxml import etree
 from datetime import date
 import zipfile
@@ -64,6 +66,12 @@ def get_color(run):
         return f"color: #{run.style.font.color.rgb};"
     return ""
 
+def debug_elm(elm):
+    for attr in dir(elm):
+        if not attr.startswith("_") and not callable(getattr(elm, attr)):
+            value = getattr(elm, attr)
+            print(f"{attr}: {value}")
+
 def get_font_size(run):
     """Extract font size in points."""
     if run.font.size:
@@ -87,16 +95,49 @@ def get_text_styles(run):
         styles.append("vertical-align: sub; font-size: smaller;")
     return " ".join(styles)
 
-def get_background_color(para):
+def paragraph_to_css(para):
+    """Converts a docx paragraph's style to CSS."""
+    css = []
+
+    # Alignment
+    align_map = {
+        None: "left",
+        0: "left",   # WD_ALIGN_PARAGRAPH.LEFT
+        1: "center", # WD_ALIGN_PARAGRAPH.CENTER
+        2: "right",  # WD_ALIGN_PARAGRAPH.RIGHT
+        3: "justify" # WD_ALIGN_PARAGRAPH.JUSTIFY
+    }
+    alignment = align_map.get(para.paragraph_format.alignment, "left")
+    css.append(f"text-align: {alignment};")
+
+    # Indentation (left, right, first-line)
+    if para.paragraph_format.left_indent:
+        css.append(f"margin-left: {para.paragraph_format.left_indent.pt}pt;")
+    if para.paragraph_format.right_indent:
+        css.append(f"margin-right: {para.paragraph_format.right_indent.pt}pt;")
+    if para.paragraph_format.first_line_indent:
+        css.append(f"text-indent: {para.paragraph_format.first_line_indent.pt}pt;")
+
+    # Spacing (before, after, line spacing)
+    if para.paragraph_format.space_before:
+        css.append(f"margin-top: {para.paragraph_format.space_before.pt}pt;")
+    if para.paragraph_format.space_after:
+        css.append(f"margin-bottom: {para.paragraph_format.space_after.pt}pt;")
+    if para.paragraph_format.line_spacing:
+        css.append(f"line-height: {para.paragraph_format.line_spacing};")
+    
     """Extract background color from a paragraph's XML structure."""
-    try:
-        shading = para._element.xpath(".//w:shd", namespaces={'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'})
-        if shading and "w:fill" in shading[0].attrib:
-            color = shading[0].attrib["w:fill"]
-            if color and color != "auto":  # Ignore default "auto" colors
-                return f"background-color: #{color};"
-    except Exception:
-        pass
+    shd = para._element.find(".//w:shd", namespaces)
+    if shd is not None: 
+        fill = shd.get(qn("w:fill"))  # Get the w:fill attribute
+        if fill and fill != 'FFFFFF':
+            # Convert DOCX color (e.g., "FF0000") to CSS format (e.g., "#FF0000")
+            css.append(f"background-color: #{fill}")
+    pPr = para._element.pPr  # Access paragraph properties
+
+    return " ".join(css)
+
+def get_background_color(para):
     return ""
 
 def get_tag(element):
@@ -155,8 +196,13 @@ def append_mixed_content(src, dst):
 def process_paragraph(para):
     """Convert a paragraph to TEI."""
 
+
     para_elem = etree.Element("p")
     para_elem.tail = "\n"
+
+    para_style = paragraph_to_css(para)
+    if para_style:
+        para_elem.set("style", para_style)
 
     # Extract paragraph background color
     background_color = get_background_color(para)
@@ -320,6 +366,30 @@ def convert_docx_to_tei(docx_file, output_tei_file):
     today = str(date.today())
     change.set("when", today)
     change.text = "Converted from DOCX file " + docx_file
+    titlestmt = etree.SubElement(filedesc, "titleStmt")
+    profiledesc = etree.SubElement(tei_header, "profileDesc")
+    
+    # Handle the document metadata
+    metadata = doc.core_properties
+    if doc.core_properties.title:
+        title = etree.SubElement(titlestmt, "title")
+        title.text = doc.core_properties.title
+    if doc.core_properties.author:
+        author = etree.SubElement(titlestmt, "author")
+        author.text = doc.core_properties.author
+    if doc.core_properties.created:
+        cdate = etree.SubElement(titlestmt, "date")
+        cdate.text = str(doc.core_properties.created)
+    if doc.core_properties.keywords:
+        textclass = etree.SubElement(profiledesc, "textClass")
+        keywords = etree.SubElement(textclass, "keywords")
+        term = etree.SubElement(keywords, "term")
+        term.text = doc.core_properties.keywords
+    if doc.core_properties.language:
+        langusage = etree.SubElement(profiledesc, "langUsage")
+        language = etree.SubElement(langusage, "language")
+        language.text = doc.core_properties.language
+
 
     # Map the docx elements onto a map
     para_map = {}
