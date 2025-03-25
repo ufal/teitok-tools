@@ -65,7 +65,7 @@ for seg in result['segments']:
 	utt.set("end", str(seg['end']))
 	uttcnt = uttcnt + 1
 	utt.set("id", "u-"+str(uttcnt))
-	if withconf:
+	if withconf and "conf" in seg:
 		utt.set("conf", str(seg['conf']))
 	for word in seg['words']:
 		tok = etree.Element("tok")
@@ -75,11 +75,15 @@ for seg in result['segments']:
 		tok.set("end", str(word['end']))
 		tokcnt = tokcnt + 1
 		tok.set("id", "w-"+str(tokcnt))
-		if withconf:
+		if withconf and "conf" in word:
 			tok.set("conf", str(word['conf']))
 		tok.tail = " "
 		# [*] is a disfluency code in whisper
-		if tok.text != "[*]":
+		if tok.text == "[*]":
+		    tok.tag = "gap"
+		    tok.set("type", "disfluency")
+		    tok.text = ""
+		else:
 			# Split off punctuation marks
 			last = True
 			while tok.text[-1] in string.punctuation:
