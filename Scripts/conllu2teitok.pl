@@ -14,6 +14,7 @@ GetOptions ( ## Command line options
             'outfolder=s' => \$outfolder, # filename of the output
             'morerev=s' => \$morerev, # language of input
             'split' => \$split, # Split into 1 file per # newdoc
+            'splitmisc' => \$splitmisc, # Split @misc column into separate attributes
             );
 
 $\ = "\n"; $, = "\t";
@@ -93,6 +94,7 @@ sub conllu2tei($fn) {
 		
 };
 
+
 sub makesent($sent, $tok) {
 	( $sent, $tok ) = @_;
 	
@@ -107,6 +109,17 @@ sub makesent($sent, $tok) {
 	for ( $i=1; $i<=$tokmax; $i++ ) {
 		$tokline = textprotect($tok{$i}); $headf = "";
 		( $word, $lemma, $upos, $xpos, $feats, $head, $deprel, $deps, $misc ) = split("\t", $tokline ); 
+		$miscparts = "";
+		if ( $splitmisc ) {
+			@tmp = split('\|', $misc);
+			for ( $j=0; $j<=scalar @tmp; $j++ ) {
+				( $mpkey, $mpval ) = split("=", $tmp[$j]);
+				if ( $mpkey eq 'spaceAfter' ) { next; };
+				if ( $mpkey eq 'tokId' ) { next; };
+				if ( $miscmap{$mpkey} ) { $mpkey = $miscmap{$mpkey}; }; # Some attributes should be renamed
+				if ( $mpkey && $mpval ) { $miscparts .= " ".makeattn($mpkey)."=\"$mpval\""; };
+			};
+		};
 		if ( $head && $head ne '' && $head ne '_' ) { $headf = "head=\"w-".$tokid{$head}."\""; };
 		if ( $mtok{$i} ) { 
 			( $mword, $mlemma, $mupos, $mxpos, $mfeats, $mhead, $mdeprel, $mdeps, $mmisc ) = split("\t", $mtok{$i}); 
@@ -119,7 +132,7 @@ sub makesent($sent, $tok) {
 		if ( $dtokxml ) {
 			$dtokxml .= "<dtok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohead=\"$head\" ord=\"$i\" deps=\"$deps\" misc=\"$misc\" $headf form=\"$word\"/>";			
 		} else {
-			$tokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohead=\"$head\" ord=\"$i\" misc=\"$misc\" $headf>$word</tok>";
+			$tokxml = "<tok id=\"w-".$tokid{$i}."\" lemma=\"$lemma\" upos=\"$upos\" xpos=\"$xpos\" feats=\"$feats\" deprel=\"$deprel\" ohead=\"$head\" ord=\"$i\" misc=\"$misc\" $headf$miscparts>$word</tok>";
 			$tokxml =~ s/ [a-z]+="_"//g; # Remove empty attributes
 			$sentxml .= $tokxml;
 			if ( $misc !~ /SpaceAfter=No/ ) { $sentxml .= " "; }; # Add a space unless told not to
@@ -165,4 +178,17 @@ sub writeit($outfile = $output) {
 	</text>
 	</TEI>";
 	close OUTFILE;
+};
+
+$miscmap = {
+	"AlignBegin" => "start",
+	"AlignEnd" => "end",
+};
+sub makeattn ($key) {
+	$key = @_[0];
+	$key =~ s/[^a-zA-Z0-0_]/_g/;
+	$key =~ s/_+/_/g;
+	$key = lc($key);
+	
+	return $key;
 };

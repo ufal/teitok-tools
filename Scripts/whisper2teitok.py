@@ -29,11 +29,12 @@ model = whisper.load_model(modelsize, **modeloptions)
 
 # Determine the transcription options
 options = { 'model': audio, 'language': args.language }
+disdect= False
 if args.disfluencies:
-	options['detect_disfluencies'] = True
+	disdect = True
 
 # Transcribe the audio file
-result = whisper.transcribe(**options)
+result = whisper.transcribe(model, audio, language=args.language, detect_disfluencies=disdect)
 
 xmlstring = "<TEI/>"	
 xmlf = etree.ElementTree(etree.fromstring(xmlstring))
@@ -78,7 +79,7 @@ for seg in result['segments']:
 			tok.set("conf", str(word['conf']))
 		tok.tail = " "
 		# [*] is a disfluency code in whisper
-		if tok.text is not "[*]":
+		if tok.text != "[*]":
 			# Split off punctuation marks
 			last = True
 			while tok.text[-1] in string.punctuation:
