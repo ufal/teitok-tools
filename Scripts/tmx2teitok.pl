@@ -45,6 +45,7 @@ foreach $tu ( $doc->findnodes("//tu") ) {
 	foreach $tuv ( $tu->findnodes(".//tuv") ) {
 		$lang = $tuv->getAttribute('xml:lang') or $lang = $tuv->getAttribute('lang');
 		$segtxt = $tuv->findnodes(".//seg")->item(0)->textContent;
+		$segtxt =~ s/\&/\&amp;/g; $segtxt =~ s/"/\&#037;/g; $segtxt =~ s/</\&lt;/g; $segtxt =~ s/>/\&gt;/g;
 		if ( $mode eq 'annotate' ) {
 			$tseg{$lang} = $segtxt;
 			$ttr{$lang} = 1;
@@ -60,7 +61,6 @@ foreach $tu ( $doc->findnodes("//tu") ) {
 			while ( ($key2, $val2) = each ( %ttr ) ) { 
 				$val2 = $tseg{$key2};
 				if ( $val2 && $key ne $key2 ) { 
-					$val2 =~ s/\&/\&amp;/g; $val2 =~ s/"/\&#037;/g; $val2 =~ s/</\&lt;/g; $val2 =~ s/>/\&gt;/g;
 					$trans .= " trans_$key2=\"$val2\"";
 				};
 			};
@@ -78,9 +78,15 @@ if ( $mode eq 'split' || $mode eq 'annotate' ) {
 		open OUTFILE, ">$output";
 		binmode(OUTFILE, ":utf8");
 		print OUTFILE "<TEI>\n<teiHeader>
+<fileDesc>
+	<notesStmt><note n=\"orgfile\">$filename</note></notesStmt>
+</fileDesc>
+<profileDesc><langUsage><language ident=\"$key\"></language></langUsage></profileDesc>
 <revisionDesc>
 	$morerev<change who=\"tmx2teitok\" when=\"$today\">Converted from TMX file $filename</change>
-</teiHeader>\n<text lang=\"$key\">$val</text>\n</TEI>";
+</revisionDesc>
+</teiHeader>
+<text lang=\"$key\">$val</text>\n</TEI>";
 		close OUTFLE;
 	};
 } else {
@@ -89,6 +95,9 @@ if ( $mode eq 'split' || $mode eq 'annotate' ) {
 	open OUTFILE, ">$output";
 	binmode(OUTFILE, ":utf8");
 	print OUTFILE "<TEI>\n<teiHeader>
+<fileDesc>
+	<notesStmt><note n=\"orgfile\">$filename</note></notesStmt>
+</fileDesc>
 <revisionDesc>
 	$morerev<change who=\"tmx2teitok\" when=\"$today\">Converted from TMX file $filename</change>
 </revisionDesc>

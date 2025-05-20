@@ -488,7 +488,7 @@ if not orgfile:
 
 # Determine what to put as the link for images
 path = Path(image_dir)
-if path.parts[-2] == "Graphics":
+if path.parts[1:] and path.parts[-2] == "Graphics":
     image_reldir = path.parts[-1]
 else:
     image_reldir = image_dir

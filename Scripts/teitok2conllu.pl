@@ -118,8 +118,10 @@ if ( !$doc->findnodes("//tok") ) {
 if ( $output ) {
 	print "Writing converted file to $output\n";
 	open OUTFILE, ">$output";
+	$outname = $output;
 } else {
 	*OUTFILE = STDOUT;
+	$outname = "STDOUT";
 };
 binmode(OUTFILE, ":utf8");
 
@@ -202,6 +204,16 @@ $scnt = 1;
 
 $docid = $filename; $docid =~ s/.*\///; $docid =~ s/\.xml//;
 
+# In case we have empty toks, build a tokid to sid 
+%id2tok = ();
+if ( $doc->findnodes("//s[\@sameAs and not(.//tok)]") ) {
+	for $tok ( $doc->findnodes("//tok") ) {
+		$tokid = $tok->getAttribute('id');
+		$tokid =~ s/^ +| +$//g;
+		$doc_id2tok{$tokid} = $tok;
+	};
+};
+
 print OUTFILE "# newdoc id = $docid";
 $sents = $doc->findnodes("//s");
 if ( !scalar $sents ) { $sents = $doc->findnodes("//u"); };
@@ -217,11 +229,23 @@ if ( $sents ) {
 		if ( $debug ) { print $sntcnt, $sentid };
 		$sntcnt++;
 		@toks =  $snt->findnodes(".//tok");
-		if ( ! scalar @toks ) { 
+		if ( !scalar @toks && $snt->getAttribute('sameAs') ) { 
+		   if ( $debug ) { print "Building list for $sentid from sameAs"; };
+		   @toks = (); $stxt = ""; $sep = "";
+		   for $tokid ( split(' ', $snt->getAttribute('sameAs') ) ) {
+		   		$tokid =~ s/^#//;
+		   		$tok = $doc_id2tok{$tokid};
+		   		if ( $tok ) { 
+		   			push(@toks, $tok); 
+			   		$stxt .= $sep.$tok->textContent; $sep = " ";
+		   		} elsif ( $verbose ) { print "No token found for $tokid"; };
+		   };
+		};
+		if ( !scalar @toks ) { 
 			if ( $verbose ) { print "Skipping empty sentence $sentid"; };
 			next; 
 		};
-		$senttxt = $snt->textContent;
+		$senttxt = $snt->textContent or $senttxt = $stxt;
 		$senttxt =~ s/\s/ /g; $senttxt =~ s/ +/ /g; $senttxt =~ s/^ | $//g;
 		print OUTFILE "# sent_id = $docid\_$sentid";
 		print OUTFILE "# text = $senttxt";
@@ -336,6 +360,10 @@ if ( $sents ) {
 # This should not be needed
 # print OUTFILE "\n";
 close OUTFLE;
+
+if ( $verbose ) { 
+	print "Output written to $outname";
+};
 
 sub putheads($txt) {
 	$txt = @_[0];
