@@ -111,7 +111,7 @@ if ( !$output && $outfolder ) {
 };
 
 if ( !$doc->findnodes("//tok") ) {
-	print "Error: cannot convert untokenized files to CoNNL-U";
+	print "Error: cannot convert untokenized files ($filename) to CoNNL-U ";
 	exit;
 };
 
